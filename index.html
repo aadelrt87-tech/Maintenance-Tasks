@@ -951,7 +951,7 @@ input[type="file"]{display:none;}
     IMAGE_QUALITY: 0.72,         // JPEG compression quality
     MAX_IMAGES_PER_FIELD: 8,
     LS_PREFIX: 'genops_',
-    REQUEST_TIMEOUT_MS: 25000
+    REQUEST_TIMEOUT_MS: 60000
   };
 
   /* ============================================================
@@ -1715,12 +1715,13 @@ input[type="file"]{display:none;}
         onSuccessReset();
         toast('success', 'Submitted', record.sheet === 'Purchase Orders' ? 'Purchase request sent for approval.' : 'Record saved to Google Sheets.');
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Submit failed; saved to offline queue:', err, record);
         setButtonLoading(btn, false);
         isSubmitting = false;
         pushToQueue(record);
         onSuccessReset();
-        toast('info', 'Saved offline', 'No connection — this will sync automatically once you\u2019re back online.');
+        toast('info', 'Saved offline', 'Submit failed locally — it was saved on this device and will retry automatically.');
       });
   }
 
@@ -1768,23 +1769,29 @@ input[type="file"]{display:none;}
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS);
+      const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT_MS || 60000);
 
+      // IMPORTANT:
+      // GitHub Pages and Google Apps Script are different origins.
+      // Google Apps Script usually receives the POST correctly, but the browser may block reading
+      // the JSON response because of CORS/redirect rules. Therefore we use no-cors and treat the
+      // request as sent once fetch resolves. The actual writing is handled by Apps Script.
       fetch(CONFIG.WEB_APP_URL, {
         method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-store',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'submit', record: record }),
         redirect: 'follow',
         signal: controller.signal
       })
-        .then((resp) => resp.json())
-        .then((json) => {
+        .then(() => {
           clearTimeout(timeoutId);
-          if (json && json.success) resolve(json);
-          else reject(new Error((json && json.error) || 'Server rejected submission'));
+          resolve({ success: true, opaque: true });
         })
         .catch((err) => {
           clearTimeout(timeoutId);
+          console.error('Apps Script submit failed. Record was not sent:', err, record);
           reject(err);
         });
     });
