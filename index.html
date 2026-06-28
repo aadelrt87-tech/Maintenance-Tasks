@@ -932,6 +932,111 @@ textarea.input {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+   /* ============================================================
+   UI POLISH LAYER 4 - TOAST + LOADING IMPROVEMENT
+   Safe visual-only changes
+   ============================================================ */
+
+/* Toast position and glass effect */
+.toast-stack {
+  top: calc(16px + var(--safe-top));
+  padding: 0 14px;
+}
+
+.toast {
+  backdrop-filter: blur(14px);
+  background:
+    linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.96));
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow:
+    0 18px 40px rgba(15,23,42,0.35),
+    0 4px 12px rgba(15,23,42,0.18);
+}
+
+.toast.success {
+  background:
+    linear-gradient(135deg, rgba(6,95,70,0.97), rgba(15,118,110,0.97));
+}
+
+.toast.error {
+  background:
+    linear-gradient(135deg, rgba(127,29,29,0.97), rgba(185,28,28,0.97));
+}
+
+.toast.info {
+  background:
+    linear-gradient(135deg, rgba(30,41,59,0.97), rgba(51,65,85,0.97));
+}
+
+.toast .body .t-title {
+  font-size: 14px;
+}
+
+.toast .body .t-msg {
+  color: rgba(255,255,255,0.82);
+}
+
+/* Loading state for submit buttons */
+.btn-submit.loading {
+  opacity: 0.92;
+  pointer-events: none;
+  filter: saturate(0.92);
+}
+
+.btn-submit.loading::before {
+  content: "Processing...";
+  position: absolute;
+  right: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.72);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Make spinner more visible */
+.btn-submit .spinner {
+  border-width: 3px;
+  width: 20px;
+  height: 20px;
+}
+
+/* Disabled submit safety */
+.btn-submit:disabled {
+  box-shadow: none;
+  opacity: 0.65;
+}
+
+/* Error field improvement */
+.input.invalid {
+  border-color: #DC2626 !important;
+  background: #FFF1F2 !important;
+  box-shadow: 0 0 0 4px rgba(220,38,38,0.10);
+}
+
+.error-msg.show {
+  display: flex;
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-top: 7px;
+}
+
+/* Online/offline pill clearer */
+.status-pill {
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.status-dot {
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
+}
+
+.status-dot.offline {
+  box-shadow: 0 0 0 3px rgba(100,116,139,0.20);
+}
 </style>
 </head>
 <body>
