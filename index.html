@@ -817,6 +817,121 @@ textarea.input {
     font-size: 24px;
   }
 }
+   /* ============================================================
+   UI POLISH LAYER 3 - PHOTO SECTION IMPROVEMENT
+   Safe visual-only changes
+   ============================================================ */
+
+/* Make upload area look more professional */
+.photo-zone {
+  position: relative;
+  overflow: hidden;
+  border-style: dashed;
+  border-color: #CBD5E1;
+}
+
+.photo-zone::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(37,99,235,0.10), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(16,185,129,0.10), transparent 35%);
+  pointer-events: none;
+}
+
+.photo-zone svg,
+.photo-zone .pz-title,
+.photo-zone .pz-sub {
+  position: relative;
+  z-index: 1;
+}
+
+.photo-zone svg {
+  color: #2563EB;
+  width: 36px;
+  height: 36px;
+}
+
+.photo-zone .pz-title {
+  color: #0F172A;
+}
+
+.photo-zone .pz-sub {
+  color: #64748B;
+}
+
+/* Improve camera/gallery buttons */
+.photo-actions {
+  margin-top: 12px;
+}
+
+.photo-btn {
+  color: #0F172A;
+  border-color: #E2E8F0;
+  font-weight: 750;
+}
+
+.photo-btn svg {
+  color: #2563EB;
+}
+
+.photo-btn:hover {
+  border-color: #2563EB;
+}
+
+/* Better image preview grid */
+.preview-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.preview-thumb {
+  aspect-ratio: 1.15;
+  background: #E2E8F0;
+  box-shadow:
+    0 10px 22px rgba(15,23,42,0.12),
+    0 2px 6px rgba(15,23,42,0.06);
+}
+
+.preview-thumb img {
+  transition: transform 0.25s ease;
+}
+
+.preview-thumb:active img {
+  transform: scale(1.04);
+}
+
+/* Better remove button on images */
+.preview-thumb .rm {
+  top: 7px;
+  right: 7px;
+  width: 26px;
+  height: 26px;
+  background: rgba(220,38,38,0.90);
+  color: #FFFFFF;
+  font-size: 15px;
+  box-shadow: 0 4px 10px rgba(15,23,42,0.22);
+}
+
+/* Compression badge */
+.preview-thumb .compress-tag {
+  bottom: 7px;
+  left: 7px;
+  background: rgba(15,23,42,0.78);
+  color: #FFFFFF;
+  font-size: 9.5px;
+  padding: 4px 7px;
+  border-radius: 999px;
+}
+
+/* On wider phones show 3 columns */
+@media (min-width: 460px) {
+  .preview-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 </style>
 </head>
 <body>
