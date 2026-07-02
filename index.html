@@ -1364,6 +1364,15 @@ select.input:focus {
         <input class="input" type="text" id="task-name" placeholder="e.g. Replace fuel filter housing seal" required>
         <div class="error-msg" id="err-task-name">Task name is required</div>
       </div>
+       <div class="field">
+  <label for="task-employee">Submitted By<span class="req">*</span></label>
+  <div class="select-wrap">
+    <select class="input" id="task-employee" required>
+      <option value="" disabled selected>Select employee…</option>
+    </select>
+  </div>
+  <div class="error-msg" id="err-task-employee">Please select the employee who submitted this task</div>
+</div>
 
       <div class="field">
         <label for="task-start-dt">Task Start Date &amp; Time<span class="req">*</span></label>
