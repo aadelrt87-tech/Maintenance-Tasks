@@ -1364,7 +1364,16 @@ select.input:focus {
         <input class="input" type="text" id="task-name" placeholder="e.g. Replace fuel filter housing seal" required>
         <div class="error-msg" id="err-task-name">Task name is required</div>
       </div>
-
+<div class="field">
+  <label for="task-employee">Submitted By<span class="req">*</span></label>
+  <div class="select-wrap">
+    <select class="input" id="task-employee" required>
+      <option value="" disabled selected>Select employee…</option>
+    </select>
+  </div>
+  <div class="error-msg" id="err-task-employee">Please select the employee who submitted this task</div>
+</div>
+       
       <div class="field">
         <label for="task-start-dt">Task Start Date &amp; Time<span class="req">*</span></label>
         <div class="dt-row">
@@ -1783,50 +1792,50 @@ select.input:focus {
      URL not yet configured) we fall back to DEFAULT_EMPLOYEES and
      keep whatever was last cached in localStorage.
   */
-  function populateEmployeeSelect(selectEl, names) {
-    const current = selectEl.value;
-    selectEl.innerHTML = '<option value="" disabled selected>Select employee…</option>';
-    names.forEach((name) => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      selectEl.appendChild(opt);
+ function populateEmployeeSelect(selectEl, names) {
+  if (!selectEl) return;
+
+  const current = selectEl.value;
+  selectEl.innerHTML = '<option value="" disabled selected>Select employee…</option>';
+  names.forEach((name) => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    selectEl.appendChild(opt);
+  });
+  if (current && names.includes(current)) selectEl.value = current;
+}
+
+function loadEmployeeNames() {
+  const cacheKey = CONFIG.LS_PREFIX + 'employees';
+  let names = CONFIG.DEFAULT_EMPLOYEES;
+
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) names = JSON.parse(cached);
+  } catch (e) {
+    /* ignore parse errors, use defaults */
+  }
+
+  populateEmployeeSelect($('att-employee'), names);
+  populateEmployeeSelect($('po-requester'), names);
+  populateEmployeeSelect($('task-employee'), names);
+
+  fetchJSONP(CONFIG.WEB_APP_URL + '?action=getEmployees')
+    .then((res) => {
+      if (res && res.success && Array.isArray(res.employees) && res.employees.length) {
+        names = res.employees;
+        localStorage.setItem(cacheKey, JSON.stringify(names));
+
+        populateEmployeeSelect($('att-employee'), names);
+        populateEmployeeSelect($('po-requester'), names);
+        populateEmployeeSelect($('task-employee'), names);
+      }
+    })
+    .catch(() => {
+      /* offline or backend unavailable — defaults already shown */
     });
-    if (current && names.includes(current)) selectEl.value = current;
-  }
-
-  function loadEmployeeNames() {
-    const cacheKey = CONFIG.LS_PREFIX + 'employees';
-    let names = CONFIG.DEFAULT_EMPLOYEES;
-    try {
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) names = JSON.parse(cached);
-    } catch (e) { /* ignore parse errors, use defaults */ }
-
-    populateEmployeeSelect($('att-employee'), names);
-    populateEmployeeSelect($('po-requester'), names);
-
-    // Attempt a live refresh from the backend (Employees sheet).
-    // Renders fine even if WEB_APP_URL is still the placeholder —
-    // the request will simply fail and we silently keep the cache.
-    fetchJSONP(CONFIG.WEB_APP_URL + '?action=getEmployees')
-      .then((res) => {
-        if (res && res.success && Array.isArray(res.employees) && res.employees.length) {
-          names = res.employees;
-          localStorage.setItem(cacheKey, JSON.stringify(names));
-          populateEmployeeSelect($('att-employee'), names);
-          populateEmployeeSelect($('po-requester'), names);
-        }
-      })
-      .catch(() => { /* offline or not yet deployed — defaults already shown */ });
-  }
-
-  /** Simple GET wrapper used for the employee list refresh (no-cors safe via JSON response) */
-  function fetchJSONP(url) {
-    return fetch(url, { method: 'GET', redirect: 'follow' })
-      .then((r) => r.json())
-      .catch(() => null);
-  }
+}
 
   /* ============================================================
      5. DATETIME "NOW" BUTTONS
@@ -1999,56 +2008,86 @@ select.input:focus {
     $('formTasks').addEventListener('submit', onSubmitTasks);
   }
 
-  function validateTasks() {
-    let ok = true;
-    const name = $('task-name');
-    const startDt = $('task-start-dt');
-    const endDt = $('task-end-dt');
-    const desc = $('task-desc');
+function validateTasks() {
+  let ok = true;
 
-    if (!name.value.trim()) { setFieldError(name, $('err-task-name'), true); ok = false; }
-    else setFieldError(name, $('err-task-name'), false);
+  const name = $('task-name');
+  const employee = $('task-employee');
+  const startDt = $('task-start-dt');
+  const endDt = $('task-end-dt');
+  const desc = $('task-desc');
 
-    if (!startDt.value) { setFieldError(startDt, $('err-task-start-dt'), true); ok = false; }
-    else setFieldError(startDt, $('err-task-start-dt'), false);
-
-    if (!endDt.value) { setFieldError(endDt, $('err-task-end-dt'), true); ok = false; }
-    else setFieldError(endDt, $('err-task-end-dt'), false);
-
-    if (ok && startDt.value && endDt.value && new Date(endDt.value) < new Date(startDt.value)) {
-      setFieldError(endDt, $('err-task-end-dt'), true);
-      $('err-task-end-dt').textContent = 'End time cannot be before start time';
-      ok = false;
-    } else {
-      $('err-task-end-dt').textContent = 'End date & time is required';
-    }
-
-    if (!desc.value.trim()) { setFieldError(desc, $('err-task-desc'), true); ok = false; }
-    else setFieldError(desc, $('err-task-desc'), false);
-
-    return ok;
+  if (!name.value.trim()) {
+    setFieldError(name, $('err-task-name'), true);
+    ok = false;
+  } else {
+    setFieldError(name, $('err-task-name'), false);
   }
 
-  function onSubmitTasks(ev) {
-    ev.preventDefault();
-    if (!validateTasks()) { vibrateError(); toast('error', 'Check the form', 'Some required fields need attention.'); return; }
-
-    const record = {
-      sheet: 'Tasks',
-      clientId: uid(),
-      data: {
-        'Submission Timestamp': isoTimestamp(),
-        'Task Name': $('task-name').value.trim(),
-        'Task Start Date Time': $('task-start-dt').value,
-        'Task End Date Time': $('task-end-dt').value,
-        'Task Description': $('task-desc').value.trim()
-      },
-      images: imageStores.tasks.slice() // array of {base64, mimeType, filename}
-    };
-
-    submitRecord(record, $('btnSubmitTask'), resetTasksForm, 'task');
+  if (!employee.value) {
+    setFieldError(employee, $('err-task-employee'), true);
+    ok = false;
+  } else {
+    setFieldError(employee, $('err-task-employee'), false);
   }
 
+  if (!startDt.value) {
+    setFieldError(startDt, $('err-task-start-dt'), true);
+    ok = false;
+  } else {
+    setFieldError(startDt, $('err-task-start-dt'), false);
+  }
+
+  if (!endDt.value) {
+    setFieldError(endDt, $('err-task-end-dt'), true);
+    ok = false;
+  } else {
+    setFieldError(endDt, $('err-task-end-dt'), false);
+  }
+
+  if (!desc.value.trim()) {
+    setFieldError(desc, $('err-task-desc'), true);
+    ok = false;
+  } else {
+    setFieldError(desc, $('err-task-desc'), false);
+  }
+
+  if (ok && startDt.value && endDt.value && new Date(endDt.value) < new Date(startDt.value)) {
+    setFieldError(endDt, $('err-task-end-dt'), true);
+    $('err-task-end-dt').textContent = 'End time cannot be before start time';
+    ok = false;
+  } else {
+    $('err-task-end-dt').textContent = 'End date & time is required';
+  }
+
+  return ok;
+}
+
+function onSubmitTasks(ev) {
+  ev.preventDefault();
+
+  if (!validateTasks()) {
+    vibrateError();
+    toast('error', 'Check the form', 'Some required fields need attention.');
+    return;
+  }
+
+  const record = {
+    sheet: 'Tasks',
+    clientId: uid(),
+    data: {
+      'Submission Timestamp': isoTimestamp(),
+      'Task Name': $('task-name').value.trim(),
+      'Submitted By': $('task-employee').value,
+      'Task Start Date Time': $('task-start-dt').value,
+      'Task End Date Time': $('task-end-dt').value,
+      'Task Description': $('task-desc').value.trim()
+    },
+    images: imageStores.tasks
+  };
+
+  submitRecord(record, $('btnSubmitTask'), resetTasksForm, 'task');
+}
   function resetTasksForm() {
     $('formTasks').reset();
     $('taskDescCount').textContent = '0';
