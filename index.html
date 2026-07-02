@@ -1195,48 +1195,6 @@ select.input:focus {
     font-size: 15px;
   }
 }
-   /* ============================================================
-   LANGUAGE SWITCHER - SAFE UI ONLY
-   ============================================================ */
-
-.lang-switch {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255,255,255,0.08);
-  padding: 4px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.12);
-  margin-right: 8px;
-}
-
-.lang-btn {
-  border: none;
-  background: transparent;
-  color: #CBD5E1;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 6px 9px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.lang-btn.active {
-  background: #FFFFFF;
-  color: #0F172A;
-}
-
-html[dir="rtl"] body {
-  direction: rtl;
-}
-
-html[dir="rtl"] .topbar {
-  direction: ltr;
-}
-
-html[dir="rtl"] .brand-text {
-  text-align: right;
-}
 </style>
 </head>
 <body>
@@ -1255,11 +1213,6 @@ html[dir="rtl"] .brand-text {
       <span class="t2">Site Maintenance Tracker</span>
     </div>
   </div>
-   <div class="lang-switch">
-  <button type="button" class="lang-btn active" id="btnLangEn">EN</button>
-  <button type="button" class="lang-btn" id="btnLangAr">AR</button>
-</div>
-   
   <div class="status-pill" id="connStatus">
     <span class="status-dot pulse" id="connDot"></span>
     <span id="connText">Online</span>
