@@ -1364,15 +1364,6 @@ select.input:focus {
         <input class="input" type="text" id="task-name" placeholder="e.g. Replace fuel filter housing seal" required>
         <div class="error-msg" id="err-task-name">Task name is required</div>
       </div>
-       <div class="field">
-  <label for="task-employee">Submitted By<span class="req">*</span></label>
-  <div class="select-wrap">
-    <select class="input" id="task-employee" required>
-      <option value="" disabled selected>Select employee…</option>
-    </select>
-  </div>
-  <div class="error-msg" id="err-task-employee">Please select the employee who submitted this task</div>
-</div>
 
       <div class="field">
         <label for="task-start-dt">Task Start Date &amp; Time<span class="req">*</span></label>
@@ -1813,8 +1804,7 @@ select.input:focus {
     } catch (e) { /* ignore parse errors, use defaults */ }
 
     populateEmployeeSelect($('att-employee'), names);
-populateEmployeeSelect($('po-requester'), names);
-populateEmployeeSelect($('task-employee'), names);
+    populateEmployeeSelect($('po-requester'), names);
 
     // Attempt a live refresh from the backend (Employees sheet).
     // Renders fine even if WEB_APP_URL is still the placeholder —
@@ -1825,8 +1815,7 @@ populateEmployeeSelect($('task-employee'), names);
           names = res.employees;
           localStorage.setItem(cacheKey, JSON.stringify(names));
           populateEmployeeSelect($('att-employee'), names);
-         populateEmployeeSelect($('po-requester'), names);
-         populateEmployeeSelect($('task-employee'), names);
+          populateEmployeeSelect($('po-requester'), names);
         }
       })
       .catch(() => { /* offline or not yet deployed — defaults already shown */ });
@@ -2013,15 +2002,12 @@ populateEmployeeSelect($('task-employee'), names);
   function validateTasks() {
     let ok = true;
     const name = $('task-name');
-    const employee = $('task-employee');
     const startDt = $('task-start-dt');
     const endDt = $('task-end-dt');
     const desc = $('task-desc');
 
     if (!name.value.trim()) { setFieldError(name, $('err-task-name'), true); ok = false; }
     else setFieldError(name, $('err-task-name'), false);
-     if (!employee.value) { setFieldError(employee, $('err-task-employee'), true); ok = false; }
-   else setFieldError(employee, $('err-task-employee'), false);
 
     if (!startDt.value) { setFieldError(startDt, $('err-task-start-dt'), true); ok = false; }
     else setFieldError(startDt, $('err-task-start-dt'), false);
@@ -2050,14 +2036,13 @@ populateEmployeeSelect($('task-employee'), names);
     const record = {
       sheet: 'Tasks',
       clientId: uid(),
-       data: {
-      'Submission Timestamp': isoTimestamp(),
-      'Task Name': $('task-name').value.trim(),
-      'Submitted By': $('task-employee').value,
-      'Task Start Date Time': $('task-start-dt').value,
-      'Task End Date Time': $('task-end-dt').value,
-      'Task Description': $('task-desc').value.trim()
-       }
+      data: {
+        'Submission Timestamp': isoTimestamp(),
+        'Task Name': $('task-name').value.trim(),
+        'Task Start Date Time': $('task-start-dt').value,
+        'Task End Date Time': $('task-end-dt').value,
+        'Task Description': $('task-desc').value.trim()
+      },
       images: imageStores.tasks.slice() // array of {base64, mimeType, filename}
     };
 
