@@ -1037,6 +1037,164 @@ textarea.input {
 .status-dot.offline {
   box-shadow: 0 0 0 3px rgba(100,116,139,0.20);
 }
+   /* ============================================================
+   UI POLISH LAYER 5 - FINAL MOBILE APP FINISH
+   Safe visual-only changes
+   ============================================================ */
+
+/* Smooth full app feeling */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-size: 15px;
+}
+
+/* Give each page more breathing room */
+.page {
+  padding-bottom: 40px;
+}
+
+/* Page header icon-like color identity */
+.page-header {
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::after {
+  content: "";
+  position: absolute;
+  width: 110px;
+  height: 110px;
+  right: -45px;
+  top: -45px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.08);
+}
+
+#page-generators .page-header::after {
+  background: rgba(37, 99, 235, 0.12);
+}
+
+#page-tasks .page-header::after {
+  background: rgba(124, 58, 237, 0.12);
+}
+
+#page-attendance .page-header::after {
+  background: rgba(13, 148, 136, 0.12);
+}
+
+#page-purchase .page-header::after {
+  background: rgba(234, 88, 12, 0.12);
+}
+
+/* Improve card separation */
+.card + .card {
+  margin-top: 16px;
+}
+
+/* Make forms easier to scan */
+.field {
+  margin-bottom: 18px;
+}
+
+/* Better placeholder visibility */
+.input::placeholder,
+textarea.input::placeholder {
+  color: #94A3B8;
+  font-size: 14px;
+}
+
+/* Focus animation */
+.input:focus,
+textarea.input:focus,
+select.input:focus {
+  transform: translateY(-1px);
+}
+
+/* Nice tap feedback */
+.card,
+.photo-zone,
+.photo-btn,
+.check-item,
+.nav-btn,
+.btn-submit {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+
+/* Better bottom nav visibility */
+.bottom-nav {
+  backdrop-filter: blur(14px);
+}
+
+.nav-btn.active .nav-label {
+  transform: translateY(-1px);
+}
+
+/* Make current section easier to recognize */
+#nav-generators.active {
+  background: rgba(37, 99, 235, 0.16);
+}
+
+#nav-tasks.active {
+  background: rgba(124, 58, 237, 0.16);
+}
+
+#nav-attendance.active {
+  background: rgba(13, 148, 136, 0.16);
+}
+
+#nav-purchase.active {
+  background: rgba(234, 88, 12, 0.16);
+}
+
+/* Final submit bar refinement */
+.submit-bar {
+  padding-top: 6px;
+}
+
+.btn-submit {
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+/* Make required star cleaner */
+.req {
+  font-weight: 800;
+}
+
+/* Better small screens */
+@media (max-width: 360px) {
+  .topbar {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .topbar .brand-text .t1 {
+    font-size: 15px;
+  }
+
+  .topbar .brand-text .t2 {
+    font-size: 9.5px;
+  }
+
+  .status-pill {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  .btn-submit {
+    font-size: 15px;
+  }
+}
 </style>
 </head>
 <body>
