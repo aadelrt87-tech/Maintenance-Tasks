@@ -2013,12 +2013,15 @@ populateEmployeeSelect($('task-employee'), names);
   function validateTasks() {
     let ok = true;
     const name = $('task-name');
+    const employee = $('task-employee');
     const startDt = $('task-start-dt');
     const endDt = $('task-end-dt');
     const desc = $('task-desc');
 
     if (!name.value.trim()) { setFieldError(name, $('err-task-name'), true); ok = false; }
     else setFieldError(name, $('err-task-name'), false);
+     if (!employee.value) { setFieldError(employee, $('err-task-employee'), true); ok = false; }
+   else setFieldError(employee, $('err-task-employee'), false);
 
     if (!startDt.value) { setFieldError(startDt, $('err-task-start-dt'), true); ok = false; }
     else setFieldError(startDt, $('err-task-start-dt'), false);
@@ -2047,13 +2050,14 @@ populateEmployeeSelect($('task-employee'), names);
     const record = {
       sheet: 'Tasks',
       clientId: uid(),
-      data: {
-        'Submission Timestamp': isoTimestamp(),
-        'Task Name': $('task-name').value.trim(),
-        'Task Start Date Time': $('task-start-dt').value,
-        'Task End Date Time': $('task-end-dt').value,
-        'Task Description': $('task-desc').value.trim()
-      },
+       data: {
+      'Submission Timestamp': isoTimestamp(),
+      'Task Name': $('task-name').value.trim(),
+      'Submitted By': $('task-employee').value,
+      'Task Start Date Time': $('task-start-dt').value,
+      'Task End Date Time': $('task-end-dt').value,
+      'Task Description': $('task-desc').value.trim()
+       }
       images: imageStores.tasks.slice() // array of {base64, mimeType, filename}
     };
 
