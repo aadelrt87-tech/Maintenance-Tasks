@@ -2973,7 +2973,25 @@ function initLanguageSwitcher() {
     initAttendanceForm();
     initPurchaseForm();
     loadEmployeeNames();
-   initLanguageSwitcher();
+   
+  const langEnBtn = $('btnLangEn');
+  const langArBtn = $('btnLangAr');
+
+  if (langEnBtn) {
+    langEnBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      setLanguage('en');
+    });
+  }
+
+  if (langArBtn) {
+    langArBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      setLanguage('ar');
+    });
+  }
+
+  setLanguage(localStorage.getItem(CONFIG.LS_PREFIX + 'language') || 'en');
     setConnStatus(navigator.onLine);
     updateQueueBanners();
 
