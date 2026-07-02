@@ -1813,7 +1813,8 @@ select.input:focus {
     } catch (e) { /* ignore parse errors, use defaults */ }
 
     populateEmployeeSelect($('att-employee'), names);
-    populateEmployeeSelect($('po-requester'), names);
+populateEmployeeSelect($('po-requester'), names);
+populateEmployeeSelect($('task-employee'), names);
 
     // Attempt a live refresh from the backend (Employees sheet).
     // Renders fine even if WEB_APP_URL is still the placeholder —
@@ -1824,7 +1825,8 @@ select.input:focus {
           names = res.employees;
           localStorage.setItem(cacheKey, JSON.stringify(names));
           populateEmployeeSelect($('att-employee'), names);
-          populateEmployeeSelect($('po-requester'), names);
+         populateEmployeeSelect($('po-requester'), names);
+         populateEmployeeSelect($('task-employee'), names);
         }
       })
       .catch(() => { /* offline or not yet deployed — defaults already shown */ });
