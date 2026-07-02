@@ -2938,14 +2938,25 @@ function setLanguage(lang) {
 }
 
 function initLanguageSwitcher() {
-  const saved = localStorage.getItem(CONFIG.LS_PREFIX + 'language') || 'en';
+  const savedLang = localStorage.getItem(CONFIG.LS_PREFIX + 'language') || 'en';
 
-  if ($('btnLangEn')) {
-    $('btnLangEn').addEventListener('click', function () {
+  const btnEn = $('btnLangEn');
+  const btnAr = $('btnLangAr');
+
+  if (btnEn) {
+    btnEn.onclick = function () {
       setLanguage('en');
-    });
+    };
   }
 
+  if (btnAr) {
+    btnAr.onclick = function () {
+      setLanguage('ar');
+    };
+  }
+
+  setLanguage(savedLang);
+}
   if ($('btnLangAr')) {
     $('btnLangAr').addEventListener('click', function () {
       setLanguage('ar');
@@ -2962,7 +2973,7 @@ function initLanguageSwitcher() {
     initAttendanceForm();
     initPurchaseForm();
     loadEmployeeNames();
-    initLanguageSwitcher();
+   initLanguageSwitcher();
     setConnStatus(navigator.onLine);
     updateQueueBanners();
 
