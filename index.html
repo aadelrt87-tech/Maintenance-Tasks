@@ -2736,6 +2736,89 @@ function initSmallNavTranslation() {
 }
 
 document.addEventListener('DOMContentLoaded', initSmallNavTranslation);
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 4 PAGE TITLES + CARD TITLES ONLY
+   ============================================================ */
+
+function applySmallTitleTranslation(lang) {
+  const translations = [
+    ['Purchase Orders', 'طلبات الشراء'],
+    ['Generator Operation Record', 'سجل تشغيل المولد'],
+    ['Maintenance Task Record', 'سجل مهمة الصيانة'],
+    ['Attendance Record', 'سجل الحضور'],
+    ['Purchase Order Request', 'طلب شراء'],
+    ['Generator Operations', 'تشغيل المولدات'],
+    ['Generators', 'المولدات'],
+    ['Tasks', 'المهام'],
+    ['Attendance', 'الحضور']
+  ];
+
+  const titleElements = document.querySelectorAll(
+    'h1, h2, h3, .page-title, .card-title, .section-title'
+  );
+
+  titleElements.forEach(function (el) {
+    const walker = document.createTreeWalker(
+      el,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    const textNodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim()) {
+        textNodes.push(node);
+      }
+    }
+
+    textNodes.forEach(function (textNode) {
+      let value = textNode.nodeValue;
+
+      translations.forEach(function (pair) {
+        const en = pair[0];
+        const ar = pair[1];
+
+        if (lang === 'ar') {
+          value = value.replace(en, ar);
+        }
+
+        if (lang === 'en') {
+          value = value.replace(ar, en);
+        }
+      });
+
+      textNode.nodeValue = value;
+    });
+  });
+}
+
+function initSmallTitleTranslation() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshTitleLanguage() {
+    const lang = localStorage.getItem('genops_language') || 'en';
+    applySmallTitleTranslation(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshTitleLanguage, 60);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshTitleLanguage, 60);
+    });
+  }
+
+  refreshTitleLanguage();
+}
+
+document.addEventListener('DOMContentLoaded', initSmallTitleTranslation);
    
 </script>
 </body>
