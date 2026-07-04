@@ -3306,6 +3306,86 @@ function initMixedLanguageCleanup() {
 }
 
 document.addEventListener('DOMContentLoaded', initMixedLanguageCleanup);
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 10 PURCHASE BUTTON FINAL FIX
+   ============================================================ */
+
+function fixPurchaseButtonLanguage() {
+  const lang = localStorage.getItem('genops_language') || 'en';
+
+  document.querySelectorAll('button').forEach(function (btn) {
+    const fullText = btn.textContent || '';
+
+    const isPurchaseButton =
+      fullText.includes('Purchase Request') ||
+      fullText.includes('إرسال طلب الشراء') ||
+      fullText.includes('طلب الشراء إرسال') ||
+      fullText.includes('Purchase Order');
+
+    if (!isPurchaseButton) return;
+
+    const walker = document.createTreeWalker(
+      btn,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    const nodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim()) {
+        nodes.push(node);
+      }
+    }
+
+    let fixed = false;
+
+    nodes.forEach(function (textNode) {
+      const value = textNode.nodeValue.trim();
+
+      if (value === '✓' || value === '✔') return;
+
+      if (!fixed) {
+        textNode.nodeValue = lang === 'ar'
+          ? 'إرسال طلب الشراء '
+          : 'Submit Purchase Request ';
+        fixed = true;
+      } else {
+        if (
+          value.includes('Purchase Request') ||
+          value.includes('Purchase Order') ||
+          value.includes('إرسال') ||
+          value.includes('طلب الشراء')
+        ) {
+          textNode.nodeValue = '';
+        }
+      }
+    });
+  });
+}
+
+function initPurchaseButtonFinalFix() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshPurchaseButton() {
+    setTimeout(fixPurchaseButtonLanguage, 200);
+    setTimeout(fixPurchaseButtonLanguage, 900);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', refreshPurchaseButton);
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', refreshPurchaseButton);
+  }
+
+  refreshPurchaseButton();
+}
+
+document.addEventListener('DOMContentLoaded', initPurchaseButtonFinalFix);
 </script>
 </body>
 </html>
