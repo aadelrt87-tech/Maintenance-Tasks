@@ -2996,7 +2996,200 @@ function initSmallButtonTranslation() {
 }
 
 document.addEventListener('DOMContentLoaded', initSmallButtonTranslation);
-   
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 8 FINAL AR/EN TEXT FIX LAYER
+   Keeps icons safe and does not change submitted values
+   ============================================================ */
+
+function applyFinalLanguageFix(lang) {
+  const pairs = [
+    ['Submit Purchase Request', 'إرسال طلب الشراء'],
+    ['Purchase Request إرسال', 'إرسال طلب الشراء'],
+    ['Approve Purchase Order', 'اعتماد طلب الشراء'],
+    ['Submit Purchase Order', 'إرسال طلب الشراء'],
+
+    ['Approve Generator Record', 'اعتماد سجل المولد'],
+    ['Approve Attendance Record', 'اعتماد سجل الحضور'],
+    ['Approve Attendance', 'اعتماد الحضور'],
+    ['Approve Task Record', 'اعتماد سجل المهمة'],
+    ['Approve Task', 'اعتماد المهمة'],
+
+    ['REQUEST DETAILS', 'تفاصيل الطلب'],
+    ['Request Details', 'تفاصيل الطلب'],
+    ['PHOTO VERIFICATION', 'التحقق بالصورة'],
+    ['Photo Verification', 'التحقق بالصورة'],
+    ['SUPPORTING PHOTOS', 'الصور المرفقة'],
+    ['Supporting Photos', 'الصور المرفقة'],
+    ['TASK DETAILS', 'تفاصيل المهمة'],
+    ['Task Details', 'تفاصيل المهمة'],
+    ['TASK PHOTOS', 'صور المهمة'],
+    ['Task Photos', 'صور المهمة'],
+    ['GENERATOR & RUN TIME', 'المولد ووقت التشغيل'],
+    ['Generator & Run Time', 'المولد ووقت التشغيل'],
+    ['OILS & FILTERS CHANGED', 'الزيوت والفلاتر المستبدلة'],
+    ['Oils & Filters Changed', 'الزيوت والفلاتر المستبدلة'],
+
+    ['Requester Name', 'اسم مقدم الطلب'],
+    ['Purchase Description', 'وصف الشراء'],
+    ['Purpose of Purchase', 'الغرض من الشراء'],
+    ['Expected Cost', 'الكلفة المتوقعة'],
+    ['Quantity', 'الكمية'],
+
+    ['Employee Name', 'اسم الموظف'],
+    ['Attendance Type', 'نوع الحضور'],
+    ['Date & Time', 'التاريخ والوقت'],
+    ['Date Time', 'التاريخ والوقت'],
+
+    ['Task Name', 'اسم المهمة'],
+    ['Submitted By', 'مقدم الطلب'],
+    ['Task Start Date & Time', 'تاريخ ووقت بداية المهمة'],
+    ['Task Start Date Time', 'تاريخ ووقت بداية المهمة'],
+    ['Task End Date & Time', 'تاريخ ووقت نهاية المهمة'],
+    ['Task End Date Time', 'تاريخ ووقت نهاية المهمة'],
+    ['Task Description', 'وصف المهمة'],
+
+    ['Generator Name', 'اسم المولد'],
+    ['Start Date & Time', 'تاريخ ووقت البداية'],
+    ['Start Date Time', 'تاريخ ووقت البداية'],
+    ['Start Hour Meter', 'عداد البداية'],
+    ['End Date & Time', 'تاريخ ووقت النهاية'],
+    ['End Date Time', 'تاريخ ووقت النهاية'],
+    ['End Hour Meter', 'عداد النهاية'],
+    ['Operating Hours', 'ساعات التشغيل'],
+
+    ['Engine Oil', 'زيت المحرك'],
+    ['Oil Filter', 'فلتر الزيت'],
+    ['Primary Fuel Filter', 'فلتر الوقود الرئيسي'],
+    ['Water Separator Filter', 'فلتر فاصل الماء'],
+    ['Air Filter', 'فلتر الهواء'],
+
+    ['Photos', 'الصور'],
+    ['Photo', 'الصورة'],
+    ['Tap to add photos', 'اضغط لإضافة الصور'],
+    ['Tap to add photo', 'اضغط لإضافة الصورة'],
+    ['Camera or gallery', 'الكاميرا أو المعرض'],
+    ['Gallery', 'المعرض'],
+    ['Camera', 'الكاميرا'],
+    ['NOW', 'الآن'],
+    ['Now', 'الآن'],
+
+    ['Request parts & supplies', 'طلب قطع ومواد'],
+    ['Clock in, out & breaks', 'تسجيل الحضور والانصراف والاستراحة'],
+    ['Maintenance task reporting', 'تسجيل مهام الصيانة'],
+    ['Operating hours & service log', 'سجل ساعات التشغيل والخدمة'],
+
+    ['Optional, multiple allowed — compressed automatically', 'اختياري، يمكن إضافة أكثر من صورة — يتم ضغطها تلقائياً'],
+    ['Required for verification — compressed automatically', 'مطلوبة للتحقق — يتم ضغطها تلقائياً'],
+    ['Reading at run start, in hours', 'قراءة بداية التشغيل بالساعات'],
+    ['Reading at run end, in hours', 'قراءة نهاية التشغيل بالساعات'],
+    ['Auto-calculated — End minus Start', 'يحسب تلقائياً — النهاية ناقص البداية'],
+    ['RUNTIME', 'وقت التشغيل'],
+    ['HRS', 'ساعة'],
+
+    ['Select type...', 'اختر النوع...'],
+    ['Select type…', 'اختر النوع...'],
+    ['Select attendance type...', 'اختر نوع الحضور...'],
+    ['Select attendance type…', 'اختر نوع الحضور...'],
+    ['Select employee...', 'اختر الموظف...'],
+    ['Select employee…', 'اختر الموظف...'],
+    ['Select requester...', 'اختر مقدم الطلب...'],
+    ['Select requester…', 'اختر مقدم الطلب...'],
+    ['Select generator...', 'اختر المولد...'],
+    ['Select generator…', 'اختر المولد...'],
+
+    ['What needs to be purchased?', 'ما المطلوب شراؤه؟'],
+    ['Why is this needed?', 'لماذا هذا مطلوب؟'],
+    ['Describe the work performed, parts used, observations', 'اكتب العمل المنجز والمواد المستخدمة والملاحظات'],
+    ['Describe the maintenance task...', 'اكتب وصف مهمة الصيانة...'],
+    ['e.g. Replace fuel filter housing seal', 'مثال: تبديل سيل قاعدة فلتر الوقود'],
+    ['e.g. 4', 'مثال: 4']
+  ];
+
+  const elements = document.querySelectorAll(
+    'h1, h2, h3, label, button, option, small, span, p, .card-title, .section-title, .section-header, .photo-title, .photo-subtitle, .upload-title, .upload-subtitle, .hint, .sub, .hero-subtitle'
+  );
+
+  elements.forEach(function (el) {
+    const walker = document.createTreeWalker(
+      el,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    const nodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim()) {
+        nodes.push(node);
+      }
+    }
+
+    nodes.forEach(function (textNode) {
+      let value = textNode.nodeValue;
+
+      pairs.forEach(function (pair) {
+        const en = pair[0];
+        const ar = pair[1];
+
+        if (lang === 'ar') {
+          value = value.replaceAll(en, ar);
+        } else {
+          value = value.replaceAll(ar, en);
+        }
+      });
+
+      textNode.nodeValue = value;
+    });
+  });
+
+  document.querySelectorAll('input, textarea').forEach(function (el) {
+    let ph = el.getAttribute('placeholder');
+    if (!ph) return;
+
+    pairs.forEach(function (pair) {
+      const en = pair[0];
+      const ar = pair[1];
+
+      if (lang === 'ar') {
+        ph = ph.replaceAll(en, ar);
+      } else {
+        ph = ph.replaceAll(ar, en);
+      }
+    });
+
+    el.setAttribute('placeholder', ph);
+  });
+}
+
+function initFinalLanguageFix() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshFinalLanguage() {
+    const lang = localStorage.getItem('genops_language') || 'en';
+    applyFinalLanguageFix(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshFinalLanguage, 120);
+      setTimeout(refreshFinalLanguage, 700);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshFinalLanguage, 120);
+      setTimeout(refreshFinalLanguage, 700);
+    });
+  }
+
+  refreshFinalLanguage();
+  setTimeout(refreshFinalLanguage, 700);
+}
+
+document.addEventListener('DOMContentLoaded', initFinalLanguageFix);
 </script>
 </body>
 </html>
