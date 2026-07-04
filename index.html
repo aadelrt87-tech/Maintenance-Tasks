@@ -2625,7 +2625,38 @@ function onSubmitTasks(ev) {
   });
 
 })();
+/* ============================================================
+   LANGUAGE SWITCHER - STEP 2 SAFE ACTIVATION ONLY
+   ============================================================ */
 
+function initSafeLanguageSwitcher() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  if (!btnEn || !btnAr) return;
+
+  function applyLang(lang) {
+    localStorage.setItem('genops_language', lang);
+
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+
+    btnEn.classList.toggle('active', lang === 'en');
+    btnAr.classList.toggle('active', lang === 'ar');
+  }
+
+  btnEn.addEventListener('click', function () {
+    applyLang('en');
+  });
+
+  btnAr.addEventListener('click', function () {
+    applyLang('ar');
+  });
+
+  applyLang(localStorage.getItem('genops_language') || 'en');
+}
+
+document.addEventListener('DOMContentLoaded', initSafeLanguageSwitcher);
 </script>
 </body>
 </html>
