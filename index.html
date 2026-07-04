@@ -3190,6 +3190,122 @@ function initFinalLanguageFix() {
 }
 
 document.addEventListener('DOMContentLoaded', initFinalLanguageFix);
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 9 MIXED TEXT CLEANUP
+   Fixes remaining mixed AR/EN phrases only
+   ============================================================ */
+
+function applyMixedLanguageCleanup(lang) {
+  const arFixes = [
+    ['Task Start التاريخ والوقت', 'تاريخ ووقت بداية المهمة'],
+    ['Task End التاريخ والوقت', 'تاريخ ووقت نهاية المهمة'],
+    ['Start التاريخ والوقت', 'تاريخ ووقت البداية'],
+    ['End التاريخ والوقت', 'تاريخ ووقت النهاية'],
+
+    ['سجل Operating Hours والخدمة', 'سجل ساعات التشغيل والخدمة'],
+    ['Operating Hours & سجل ساعات التشغيل والخدمة', 'سجل ساعات التشغيل والخدمة'],
+    ['Operating hours & سجل ساعات التشغيل والخدمة', 'سجل ساعات التشغيل والخدمة'],
+
+    ['EMPLOYEE & TIME', 'الموظف والوقت'],
+    ['Employee & Time', 'الموظف والوقت'],
+    ['GENERATOR & RUN TIME', 'المولد ووقت التشغيل'],
+    ['Generator & Run Time', 'المولد ووقت التشغيل'],
+
+    ['Start Date & Time', 'تاريخ ووقت البداية'],
+    ['End Date & Time', 'تاريخ ووقت النهاية'],
+    ['Task Start Date & Time', 'تاريخ ووقت بداية المهمة'],
+    ['Task End Date & Time', 'تاريخ ووقت نهاية المهمة'],
+
+    ['Operating Hours', 'ساعات التشغيل']
+  ];
+
+  const enFixes = [
+    ['Task Start التاريخ والوقت', 'Task Start Date & Time'],
+    ['Task End التاريخ والوقت', 'Task End Date & Time'],
+    ['Start التاريخ والوقت', 'Start Date & Time'],
+    ['End التاريخ والوقت', 'End Date & Time'],
+
+    ['سجل Operating Hours والخدمة', 'Operating hours & service log'],
+    ['سجل ساعات التشغيل والخدمة', 'Operating hours & service log'],
+    ['Operating Hours & سجل ساعات التشغيل والخدمة', 'Operating hours & service log'],
+
+    ['الموظف والوقت', 'Employee & Time'],
+    ['المولد ووقت التشغيل', 'Generator & Run Time'],
+
+    ['تاريخ ووقت بداية المهمة', 'Task Start Date & Time'],
+    ['تاريخ ووقت نهاية المهمة', 'Task End Date & Time'],
+    ['تاريخ ووقت البداية', 'Start Date & Time'],
+    ['تاريخ ووقت النهاية', 'End Date & Time'],
+    ['ساعات التشغيل', 'Operating Hours']
+  ];
+
+  const fixes = lang === 'ar' ? arFixes : enFixes;
+
+  const walker = document.createTreeWalker(
+    document.body,
+    NodeFilter.SHOW_TEXT,
+    null
+  );
+
+  const nodes = [];
+  let node;
+
+  while (node = walker.nextNode()) {
+    if (node.nodeValue && node.nodeValue.trim()) {
+      nodes.push(node);
+    }
+  }
+
+  nodes.forEach(function (textNode) {
+    let value = textNode.nodeValue;
+
+    fixes.forEach(function (pair) {
+      value = value.split(pair[0]).join(pair[1]);
+    });
+
+    textNode.nodeValue = value;
+  });
+
+  document.querySelectorAll('input, textarea').forEach(function (el) {
+    let ph = el.getAttribute('placeholder');
+    if (!ph) return;
+
+    fixes.forEach(function (pair) {
+      ph = ph.split(pair[0]).join(pair[1]);
+    });
+
+    el.setAttribute('placeholder', ph);
+  });
+}
+
+function initMixedLanguageCleanup() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshCleanup() {
+    const lang = localStorage.getItem('genops_language') || 'en';
+    applyMixedLanguageCleanup(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshCleanup, 180);
+      setTimeout(refreshCleanup, 900);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshCleanup, 180);
+      setTimeout(refreshCleanup, 900);
+    });
+  }
+
+  refreshCleanup();
+  setTimeout(refreshCleanup, 900);
+}
+
+document.addEventListener('DOMContentLoaded', initMixedLanguageCleanup);
 </script>
 </body>
 </html>
