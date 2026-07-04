@@ -2819,6 +2819,95 @@ function initSmallTitleTranslation() {
 }
 
 document.addEventListener('DOMContentLoaded', initSmallTitleTranslation);
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 6 PLACEHOLDERS + EMPTY SELECT OPTIONS
+   ============================================================ */
+
+function applySmallPlaceholderTranslation(lang) {
+  const placeholderMap = [
+    ['Select generator...', 'اختر المولد...'],
+    ['Select generator…', 'اختر المولد...'],
+    ['Select employee...', 'اختر الموظف...'],
+    ['Select employee…', 'اختر الموظف...'],
+    ['Select requester...', 'اختر مقدم الطلب...'],
+    ['Select requester…', 'اختر مقدم الطلب...'],
+    ['Select attendance type...', 'اختر نوع الحضور...'],
+    ['Select attendance type…', 'اختر نوع الحضور...'],
+
+    ['What needs to be purchased?', 'ما المطلوب شراؤه؟'],
+    ['Why is this needed?', 'لماذا هذا مطلوب؟'],
+    ['Describe the maintenance task...', 'اكتب وصف مهمة الصيانة...'],
+    ['Describe the maintenance task…', 'اكتب وصف مهمة الصيانة...'],
+    ['e.g. 4', 'مثال: 4'],
+    ['0', '0']
+  ];
+
+  document.querySelectorAll('input, textarea').forEach(function (el) {
+    const current = el.getAttribute('placeholder');
+    if (!current) return;
+
+    placeholderMap.forEach(function (pair) {
+      const en = pair[0];
+      const ar = pair[1];
+
+      if (lang === 'ar' && current === en) {
+        el.setAttribute('placeholder', ar);
+      }
+
+      if (lang === 'en' && current === ar) {
+        el.setAttribute('placeholder', en);
+      }
+    });
+  });
+
+  document.querySelectorAll('select option[value=""]').forEach(function (option) {
+    let value = option.textContent;
+
+    placeholderMap.forEach(function (pair) {
+      const en = pair[0];
+      const ar = pair[1];
+
+      if (lang === 'ar') {
+        value = value.replace(en, ar);
+      }
+
+      if (lang === 'en') {
+        value = value.replace(ar, en);
+      }
+    });
+
+    option.textContent = value;
+  });
+}
+
+function initSmallPlaceholderTranslation() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshPlaceholderLanguage() {
+    const lang = localStorage.getItem('genops_language') || 'en';
+    applySmallPlaceholderTranslation(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshPlaceholderLanguage, 80);
+      setTimeout(refreshPlaceholderLanguage, 600);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshPlaceholderLanguage, 80);
+      setTimeout(refreshPlaceholderLanguage, 600);
+    });
+  }
+
+  refreshPlaceholderLanguage();
+  setTimeout(refreshPlaceholderLanguage, 600);
+}
+
+document.addEventListener('DOMContentLoaded', initSmallPlaceholderTranslation);
    
 </script>
 </body>
