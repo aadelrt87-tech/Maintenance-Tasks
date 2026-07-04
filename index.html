@@ -2658,7 +2658,7 @@ function initSafeLanguageSwitcher() {
 
 document.addEventListener('DOMContentLoaded', initSafeLanguageSwitcher);
    /* ============================================================
-   LANGUAGE SWITCHER - STEP 3 NAV TEXT ONLY
+   LANGUAGE SWITCHER - STEP 3 NAV TEXT ONLY - ICON SAFE
    ============================================================ */
 
 function applySmallNavTranslation(lang) {
@@ -2670,25 +2670,48 @@ function applySmallNavTranslation(lang) {
     ['Purchase', 'الشراء']
   ];
 
-  const elements = document.querySelectorAll('button, .nav-btn, .tab-btn, .nav-item');
+  const navElements = document.querySelectorAll(
+    '.nav-btn, .tab-btn, .nav-item, [data-tab]'
+  );
 
-  elements.forEach(function (el) {
-    translations.forEach(function (pair) {
-      const en = pair[0];
-      const ar = pair[1];
+  navElements.forEach(function (el) {
+    const walker = document.createTreeWalker(
+      el,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
 
-      if (lang === 'ar' && el.textContent.includes(en)) {
-        el.textContent = el.textContent.replace(en, ar);
+    const textNodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim()) {
+        textNodes.push(node);
       }
+    }
 
-      if (lang === 'en' && el.textContent.includes(ar)) {
-        el.textContent = el.textContent.replace(ar, en);
-      }
+    textNodes.forEach(function (textNode) {
+      let value = textNode.nodeValue;
+
+      translations.forEach(function (pair) {
+        const en = pair[0];
+        const ar = pair[1];
+
+        if (lang === 'ar') {
+          value = value.replace(en, ar);
+        }
+
+        if (lang === 'en') {
+          value = value.replace(ar, en);
+        }
+      });
+
+      textNode.nodeValue = value;
     });
   });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function initSmallNavTranslation() {
   const btnEn = document.getElementById('btnLangEn');
   const btnAr = document.getElementById('btnLangAr');
 
@@ -2699,18 +2722,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (btnEn) {
     btnEn.addEventListener('click', function () {
-      setTimeout(refreshNavLanguage, 0);
+      setTimeout(refreshNavLanguage, 50);
     });
   }
 
   if (btnAr) {
     btnAr.addEventListener('click', function () {
-      setTimeout(refreshNavLanguage, 0);
+      setTimeout(refreshNavLanguage, 50);
     });
   }
 
   refreshNavLanguage();
-});
+}
+
+document.addEventListener('DOMContentLoaded', initSmallNavTranslation);
 </script>
 </body>
 </html>
