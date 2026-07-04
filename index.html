@@ -2657,6 +2657,60 @@ function initSafeLanguageSwitcher() {
 }
 
 document.addEventListener('DOMContentLoaded', initSafeLanguageSwitcher);
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 3 NAV TEXT ONLY
+   ============================================================ */
+
+function applySmallNavTranslation(lang) {
+  const translations = [
+    ['Generators', 'المولدات'],
+    ['Tasks', 'المهام'],
+    ['Attendance', 'الحضور'],
+    ['Purchase Orders', 'طلبات الشراء'],
+    ['Purchase', 'الشراء']
+  ];
+
+  const elements = document.querySelectorAll('button, .nav-btn, .tab-btn, .nav-item');
+
+  elements.forEach(function (el) {
+    translations.forEach(function (pair) {
+      const en = pair[0];
+      const ar = pair[1];
+
+      if (lang === 'ar' && el.textContent.includes(en)) {
+        el.textContent = el.textContent.replace(en, ar);
+      }
+
+      if (lang === 'en' && el.textContent.includes(ar)) {
+        el.textContent = el.textContent.replace(ar, en);
+      }
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshNavLanguage() {
+    const lang = localStorage.getItem('genops_language') || 'en';
+    applySmallNavTranslation(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshNavLanguage, 0);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshNavLanguage, 0);
+    });
+  }
+
+  refreshNavLanguage();
+});
 </script>
 </body>
 </html>
