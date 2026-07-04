@@ -2908,6 +2908,94 @@ function initSmallPlaceholderTranslation() {
 }
 
 document.addEventListener('DOMContentLoaded', initSmallPlaceholderTranslation);
+   /* ============================================================
+   LANGUAGE SWITCHER - STEP 7 BUTTON TEXT ONLY - ICON SAFE
+   ============================================================ */
+
+function applySmallButtonTranslation(lang) {
+  const translations = [
+    ['Approve Generator Record', 'اعتماد سجل المولد'],
+    ['Approve Task Record', 'اعتماد سجل المهمة'],
+    ['Approve Attendance Record', 'اعتماد سجل الحضور'],
+    ['Submit Purchase Order', 'إرسال طلب الشراء'],
+    ['Approve Purchase Order', 'اعتماد طلب الشراء'],
+
+    ['Tap to add photos', 'اضغط لإضافة الصور'],
+    ['Add photos', 'إضافة صور'],
+    ['Gallery', 'المعرض'],
+    ['Camera', 'الكاميرا'],
+    ['Use Now', 'استخدم الوقت الحالي'],
+    ['Now', 'الآن'],
+    ['Submit', 'إرسال'],
+    ['Save', 'حفظ']
+  ];
+
+  const buttonElements = document.querySelectorAll(
+    'button, .btn, .submit-btn, .photo-btn, .primary-btn'
+  );
+
+  buttonElements.forEach(function (el) {
+    const walker = document.createTreeWalker(
+      el,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    const textNodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim()) {
+        textNodes.push(node);
+      }
+    }
+
+    textNodes.forEach(function (textNode) {
+      let value = textNode.nodeValue;
+
+      translations.forEach(function (pair) {
+        const en = pair[0];
+        const ar = pair[1];
+
+        if (lang === 'ar') {
+          value = value.replace(en, ar);
+        }
+
+        if (lang === 'en') {
+          value = value.replace(ar, en);
+        }
+      });
+
+      textNode.nodeValue = value;
+    });
+  });
+}
+
+function initSmallButtonTranslation() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshButtonLanguage() {
+    const lang = localStorage.getItem('genops_language') || 'en';
+    applySmallButtonTranslation(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshButtonLanguage, 90);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshButtonLanguage, 90);
+    });
+  }
+
+  refreshButtonLanguage();
+}
+
+document.addEventListener('DOMContentLoaded', initSmallButtonTranslation);
    
 </script>
 </body>
