@@ -3958,6 +3958,7 @@ async function submitAuthLogin() {
     }
 
     saveAuthSession(result);
+     scheduleLoggedInIdentityRules();
     hideAuthLoginScreen();
 
     if (passcodeInput) passcodeInput.value = '';
@@ -4035,13 +4036,81 @@ function initAuthTestMode() {
   }
 
   if (authSessionExists()) {
-    hideAuthLoginScreen();
-  } else {
-    showAuthLoginScreen();
-  }
+  scheduleLoggedInIdentityRules();
+  hideAuthLoginScreen();
+} else {
+  showAuthLoginScreen();
+
 }
 
 document.addEventListener('DOMContentLoaded', initAuthTestMode);
+
+   /* ============================================================
+   LOCK EMPLOYEE FIELDS FOR NORMAL USERS
+   Admin keeps access to all employee names
+   ============================================================ */
+
+function applyLoggedInIdentityRules() {
+  const token = localStorage.getItem(AUTH_KEYS.token);
+  const employeeName =
+    localStorage.getItem(AUTH_KEYS.employeeName) || '';
+
+  const role =
+    localStorage.getItem(AUTH_KEYS.role) || 'User';
+
+  if (!token) return;
+
+  const isAdmin =
+    String(role).trim().toLowerCase() === 'admin';
+
+  const employeeSelectIds = [
+    'att-employee',
+    'task-employee',
+    'po-requester'
+  ];
+
+  employeeSelectIds.forEach(function (selectId) {
+    const select = document.getElementById(selectId);
+
+    if (!select) return;
+
+    // Admin can select any employee.
+    if (isAdmin) {
+      select.disabled = false;
+      select.removeAttribute('data-auth-locked');
+      return;
+    }
+
+    // Normal user is locked to their own name.
+    if (!employeeName) return;
+
+    let employeeOption = Array.from(select.options).find(
+      function (option) {
+        return (
+          option.value === employeeName ||
+          option.textContent.trim() === employeeName
+        );
+      }
+    );
+
+    if (!employeeOption) {
+      employeeOption = document.createElement('option');
+      employeeOption.value = employeeName;
+      employeeOption.textContent = employeeName;
+      select.appendChild(employeeOption);
+    }
+
+    select.value = employeeName;
+    select.disabled = true;
+    select.setAttribute('data-auth-locked', 'true');
+  });
+}
+
+function scheduleLoggedInIdentityRules() {
+  [0, 300, 800, 1500, 3000].forEach(function (delay) {
+    setTimeout(applyLoggedInIdentityRules, delay);
+  });
+}
    
 </script>
 </body>
