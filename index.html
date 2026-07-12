@@ -3982,12 +3982,10 @@ async function submitAuthLogin() {
 }
 
 function initAuthTestMode() {
-  const params = new URLSearchParams(window.location.search);
-  const isLoginTestMode = params.get('loginTest') === '1';
-
-  if (!isLoginTestMode) {
-    return;
-  }
+function initAuthTestMode() {
+  const loginButton = document.getElementById('authLoginButton');
+  const refreshButton = document.getElementById('authRefreshCaptcha');
+  const logoutButton = document.getElementById('authLogoutButton');
 
   const loginButton = document.getElementById('authLoginButton');
   const refreshButton = document.getElementById('authRefreshCaptcha');
