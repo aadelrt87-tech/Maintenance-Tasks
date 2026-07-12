@@ -2179,6 +2179,19 @@ html[dir="rtl"] .auth-user-bar {
   if (current && names.includes(current)) selectEl.value = current;
 }
 
+function fetchJSONP(url) {
+  return fetch(url, {
+    method: 'GET',
+    redirect: 'follow',
+    cache: 'no-store'
+  }).then(function (response) {
+    if (!response.ok) {
+      throw new Error('Employee list request failed: ' + response.status);
+    }
+    return response.json();
+  });
+}
+
 function loadEmployeeNames() {
   const cacheKey = CONFIG.LS_PREFIX + 'employees';
   let names = CONFIG.DEFAULT_EMPLOYEES;
@@ -3958,7 +3971,7 @@ async function submitAuthLogin() {
     }
 
     saveAuthSession(result);
-     scheduleLoggedInIdentityRules();
+    scheduleLoggedInIdentityRules();
     hideAuthLoginScreen();
 
     if (passcodeInput) passcodeInput.value = '';
@@ -3981,7 +3994,6 @@ async function submitAuthLogin() {
   }
 }
 
-function initAuthTestMode() {
 function initAuthTestMode() {
 
   const loginButton = document.getElementById('authLoginButton');
@@ -4031,12 +4043,11 @@ function initAuthTestMode() {
   }
 
   if (authSessionExists()) {
-  scheduleLoggedInIdentityRules();
-  hideAuthLoginScreen();
-} else {
-  showAuthLoginScreen();
-
-}
+    scheduleLoggedInIdentityRules();
+    hideAuthLoginScreen();
+  } else {
+    showAuthLoginScreen();
+  }
 }
 document.addEventListener('DOMContentLoaded', initAuthTestMode);
 
