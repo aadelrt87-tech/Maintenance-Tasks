@@ -2582,7 +2582,11 @@ function onSubmitTasks(ev) {
       fetch(CONFIG.WEB_APP_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'submit', record: record }),
+        body: JSON.stringify({
+        action: 'submit',
+        token: localStorage.getItem(CONFIG.LS_PREFIX + 'auth_token') || '',
+         record: record
+          }),
         redirect: 'follow',
         signal: controller.signal
       })
