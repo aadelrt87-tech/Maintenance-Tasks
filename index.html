@@ -3729,6 +3729,319 @@ function initPurchaseButtonFinalFix() {
 }
 
 document.addEventListener('DOMContentLoaded', initPurchaseButtonFinalFix);
+
+   /* ============================================================
+   LOGIN SYSTEM - SAFE TEST MODE
+   Login screen appears only when URL contains: loginTest=1
+   ============================================================ */
+
+const AUTH_KEYS = {
+  token: CONFIG.LS_PREFIX + 'auth_token',
+  username: CONFIG.LS_PREFIX + 'auth_username',
+  employeeName: CONFIG.LS_PREFIX + 'auth_employee_name',
+  role: CONFIG.LS_PREFIX + 'auth_role',
+  expiresAt: CONFIG.LS_PREFIX + 'auth_expires_at'
+};
+
+let authCaptchaResult = null;
+
+function authCurrentLanguage() {
+  return localStorage.getItem('genops_language') || 'en';
+}
+
+function authMessage(en, ar) {
+  return authCurrentLanguage() === 'ar' ? ar : en;
+}
+
+function generateAuthCaptcha() {
+  const firstNumber = Math.floor(Math.random() * 8) + 2;
+  const secondNumber = Math.floor(Math.random() * 8) + 1;
+
+  authCaptchaResult = firstNumber + secondNumber;
+
+  const question = document.getElementById('authCaptchaQuestion');
+  const answerInput = document.getElementById('authCaptchaAnswer');
+
+  if (question) {
+    question.textContent = firstNumber + ' + ' + secondNumber + ' = ?';
+  }
+
+  if (answerInput) {
+    answerInput.value = '';
+  }
+}
+
+function applyAuthLanguage() {
+  const lang = authCurrentLanguage();
+
+  document.querySelectorAll('[data-auth-en][data-auth-ar]').forEach(function (el) {
+    el.textContent = lang === 'ar'
+      ? el.getAttribute('data-auth-ar')
+      : el.getAttribute('data-auth-en');
+  });
+
+  const usernameInput = document.getElementById('authUsername');
+  const passcodeInput = document.getElementById('authPasscode');
+  const captchaInput = document.getElementById('authCaptchaAnswer');
+
+  if (usernameInput) {
+    usernameInput.placeholder =
+      lang === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username';
+  }
+
+  if (passcodeInput) {
+    passcodeInput.placeholder =
+      lang === 'ar' ? 'أدخل رمز الدخول' : 'Enter passcode';
+  }
+
+  if (captchaInput) {
+    captchaInput.placeholder =
+      lang === 'ar' ? 'أدخل نتيجة العملية' : 'Enter the answer';
+  }
+}
+
+function showAuthError(message) {
+  const errorBox = document.getElementById('authLoginError');
+
+  if (!errorBox) return;
+
+  errorBox.textContent = message;
+  errorBox.hidden = false;
+}
+
+function clearAuthError() {
+  const errorBox = document.getElementById('authLoginError');
+
+  if (!errorBox) return;
+
+  errorBox.textContent = '';
+  errorBox.hidden = true;
+}
+
+function saveAuthSession(result) {
+  localStorage.setItem(AUTH_KEYS.token, result.token || '');
+  localStorage.setItem(AUTH_KEYS.username, result.username || '');
+  localStorage.setItem(AUTH_KEYS.employeeName, result.employeeName || '');
+  localStorage.setItem(AUTH_KEYS.role, result.role || 'User');
+  localStorage.setItem(AUTH_KEYS.expiresAt, result.expiresAt || '');
+}
+
+function clearAuthSession() {
+  Object.keys(AUTH_KEYS).forEach(function (key) {
+    localStorage.removeItem(AUTH_KEYS[key]);
+  });
+}
+
+function authSessionExists() {
+  const token = localStorage.getItem(AUTH_KEYS.token);
+  const expiresAt = localStorage.getItem(AUTH_KEYS.expiresAt);
+
+  if (!token || !expiresAt) return false;
+
+  const expiryTime = new Date(expiresAt).getTime();
+
+  if (!expiryTime || expiryTime <= Date.now()) {
+    clearAuthSession();
+    return false;
+  }
+
+  return true;
+}
+
+function updateAuthUserBar() {
+  const employeeElement = document.getElementById('authLoggedEmployee');
+  const roleElement = document.getElementById('authLoggedRole');
+
+  if (employeeElement) {
+    employeeElement.textContent =
+      localStorage.getItem(AUTH_KEYS.employeeName) ||
+      localStorage.getItem(AUTH_KEYS.username) ||
+      '';
+  }
+
+  if (roleElement) {
+    roleElement.textContent =
+      localStorage.getItem(AUTH_KEYS.role) || '';
+  }
+}
+
+function showAuthLoginScreen() {
+  const loginScreen = document.getElementById('authLoginScreen');
+  const userBar = document.getElementById('authUserBar');
+
+  if (loginScreen) loginScreen.hidden = false;
+  if (userBar) userBar.hidden = true;
+
+  applyAuthLanguage();
+  generateAuthCaptcha();
+
+  setTimeout(function () {
+    const usernameInput = document.getElementById('authUsername');
+    if (usernameInput) usernameInput.focus();
+  }, 100);
+}
+
+function hideAuthLoginScreen() {
+  const loginScreen = document.getElementById('authLoginScreen');
+  const userBar = document.getElementById('authUserBar');
+
+  if (loginScreen) loginScreen.hidden = true;
+
+  updateAuthUserBar();
+
+  if (userBar) userBar.hidden = false;
+}
+
+async function submitAuthLogin() {
+  clearAuthError();
+
+  const usernameInput = document.getElementById('authUsername');
+  const passcodeInput = document.getElementById('authPasscode');
+  const captchaInput = document.getElementById('authCaptchaAnswer');
+  const loginButton = document.getElementById('authLoginButton');
+
+  const username = String(usernameInput ? usernameInput.value : '').trim();
+  const passcode = String(passcodeInput ? passcodeInput.value : '').trim();
+  const captchaAnswer = Number(captchaInput ? captchaInput.value : '');
+
+  if (!username || !passcode) {
+    showAuthError(
+      authMessage(
+        'Enter the username and passcode.',
+        'أدخل اسم المستخدم ورمز الدخول.'
+      )
+    );
+    return;
+  }
+
+  if (
+    !Number.isFinite(captchaAnswer) ||
+    captchaAnswer !== authCaptchaResult
+  ) {
+    showAuthError(
+      authMessage(
+        'The verification answer is incorrect.',
+        'إجابة التحقق غير صحيحة.'
+      )
+    );
+
+    generateAuthCaptcha();
+    return;
+  }
+
+  if (loginButton) {
+    loginButton.disabled = true;
+  }
+
+  try {
+    const response = await fetch(CONFIG.WEB_APP_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        action: 'login',
+        username: username,
+        passcode: passcode
+      }),
+      redirect: 'follow'
+    });
+
+    const result = await response.json();
+
+    if (!result || !result.success) {
+      throw new Error(
+        result && result.error
+          ? result.error
+          : 'Login failed'
+      );
+    }
+
+    saveAuthSession(result);
+    hideAuthLoginScreen();
+
+    if (passcodeInput) passcodeInput.value = '';
+    if (captchaInput) captchaInput.value = '';
+
+  } catch (error) {
+    showAuthError(
+      authMessage(
+        'Login failed. Check your username and passcode.',
+        'فشل تسجيل الدخول. تحقق من اسم المستخدم ورمز الدخول.'
+      )
+    );
+
+    generateAuthCaptcha();
+
+  } finally {
+    if (loginButton) {
+      loginButton.disabled = false;
+    }
+  }
+}
+
+function initAuthTestMode() {
+  const params = new URLSearchParams(window.location.search);
+  const isLoginTestMode = params.get('loginTest') === '1';
+
+  if (!isLoginTestMode) {
+    return;
+  }
+
+  const loginButton = document.getElementById('authLoginButton');
+  const refreshButton = document.getElementById('authRefreshCaptcha');
+  const logoutButton = document.getElementById('authLogoutButton');
+  const passcodeInput = document.getElementById('authPasscode');
+  const captchaInput = document.getElementById('authCaptchaAnswer');
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  if (loginButton) {
+    loginButton.addEventListener('click', submitAuthLogin);
+  }
+
+  if (refreshButton) {
+    refreshButton.addEventListener('click', generateAuthCaptcha);
+  }
+
+  if (logoutButton) {
+    logoutButton.addEventListener('click', function () {
+      clearAuthSession();
+      showAuthLoginScreen();
+    });
+  }
+
+  [passcodeInput, captchaInput].forEach(function (input) {
+    if (!input) return;
+
+    input.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        submitAuthLogin();
+      }
+    });
+  });
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(applyAuthLanguage, 100);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(applyAuthLanguage, 100);
+    });
+  }
+
+  if (authSessionExists()) {
+    hideAuthLoginScreen();
+  } else {
+    showAuthLoginScreen();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initAuthTestMode);
    
 </script>
 </body>
