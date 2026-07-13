@@ -4013,11 +4013,34 @@ function initAuthTestMode() {
   }
 
   if (logoutButton) {
-    logoutButton.addEventListener('click', function () {
+  logoutButton.addEventListener('click', async function () {
+    const token = localStorage.getItem(AUTH_KEYS.token) || '';
+
+    logoutButton.disabled = true;
+
+    try {
+      if (token) {
+        await fetch(CONFIG.WEB_APP_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            action: 'logout',
+            token: token
+          }),
+          redirect: 'follow'
+        });
+      }
+    } catch (error) {
+      console.warn('Server logout failed:', error);
+    } finally {
       clearAuthSession();
+      logoutButton.disabled = false;
       showAuthLoginScreen();
-    });
-  }
+    }
+  });
+}
 
   [passcodeInput, captchaInput].forEach(function (input) {
     if (!input) return;
