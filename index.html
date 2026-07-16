@@ -2869,6 +2869,177 @@ function onSubmitTasks(ev) {
     qsa('#formPurchase .invalid').forEach((el) => el.classList.remove('invalid'));
     qsa('#formPurchase .error-msg.show').forEach((el) => el.classList.remove('show'));
   }
+   /* ============================================================
+   FUEL CONSUMPTION FORM
+   ============================================================ */
+
+function initFuelForm() {
+  const form = $('formFuel');
+
+  if (!form) return;
+
+  form.addEventListener('submit', onSubmitFuel);
+
+  const firstDate = $('fuel-first-dt');
+
+  if (firstDate && !firstDate.value) {
+    firstDate.value = nowForInput();
+  }
+}
+
+function validateFuel() {
+  let ok = true;
+
+  const firstDate = $('fuel-first-dt');
+  const firstReading = $('fuel-first-reading');
+  const secondDate = $('fuel-second-dt');
+  const secondReading = $('fuel-second-reading');
+
+  const firstValue = parseFloat(firstReading.value);
+  const secondValue = parseFloat(secondReading.value);
+
+  if (!firstDate.value) {
+    setFieldError(
+      firstDate,
+      $('err-fuel-first-dt'),
+      true
+    );
+    ok = false;
+  } else {
+    setFieldError(
+      firstDate,
+      $('err-fuel-first-dt'),
+      false
+    );
+  }
+
+  if (
+    firstReading.value === '' ||
+    !Number.isFinite(firstValue) ||
+    firstValue < 0
+  ) {
+    setFieldError(
+      firstReading,
+      $('err-fuel-first-reading'),
+      true
+    );
+    ok = false;
+  } else {
+    setFieldError(
+      firstReading,
+      $('err-fuel-first-reading'),
+      false
+    );
+  }
+
+  if (!secondDate.value) {
+    setFieldError(
+      secondDate,
+      $('err-fuel-second-dt'),
+      true
+    );
+    ok = false;
+  } else {
+    setFieldError(
+      secondDate,
+      $('err-fuel-second-dt'),
+      false
+    );
+  }
+
+  if (
+    secondReading.value === '' ||
+    !Number.isFinite(secondValue) ||
+    secondValue < 0 ||
+    secondValue > firstValue
+  ) {
+    setFieldError(
+      secondReading,
+      $('err-fuel-second-reading'),
+      true
+    );
+    ok = false;
+  } else {
+    setFieldError(
+      secondReading,
+      $('err-fuel-second-reading'),
+      false
+    );
+  }
+
+  return ok;
+}
+
+function onSubmitFuel(event) {
+  event.preventDefault();
+
+  if (!validateFuel()) {
+    vibrateError();
+
+    toast(
+      'error',
+      'Check the form',
+      'Some required fields need attention.'
+    );
+
+    return;
+  }
+
+  const firstReading =
+    parseFloat($('fuel-first-reading').value);
+
+  const secondReading =
+    parseFloat($('fuel-second-reading').value);
+
+  const consumption =
+    Number((firstReading - secondReading).toFixed(2));
+
+  const record = {
+    sheet: 'Fuel Consumption',
+    clientId: uid(),
+
+    data: {
+      'Submission Timestamp': isoTimestamp(),
+
+      'Date and Time of First Reading':
+        $('fuel-first-dt').value,
+
+      'First Reading': firstReading,
+
+      'Date and Time of Second Reading':
+        $('fuel-second-dt').value,
+
+      'Second Reading': secondReading,
+
+      'Consumption': consumption,
+
+      'Note': $('fuel-note').value.trim()
+    }
+  };
+
+  submitRecord(
+    record,
+    $('btnSubmitFuel'),
+    resetFuelForm,
+    'fuel'
+  );
+}
+
+function resetFuelForm() {
+  $('formFuel').reset();
+
+  $('fuel-consumption').value = '0';
+
+  qsa('#formFuel .invalid').forEach(function (element) {
+    element.classList.remove('invalid');
+  });
+
+  qsa('#formFuel .error-msg.show').forEach(function (element) {
+    element.classList.remove('show');
+  });
+
+  $('fuel-first-dt').value = nowForInput();
+}
 
   /* ============================================================
      10. IMAGE HANDLING
@@ -3031,7 +3202,8 @@ function onSubmitTasks(ev) {
     'Generators': { banner: 'genQueueBanner', text: 'genQueueText', noun: 'record' },
     'Tasks': { banner: 'taskQueueBanner', text: 'taskQueueText', noun: 'task' },
     'Attendance': { banner: 'attQueueBanner', text: 'attQueueText', noun: 'record' },
-    'Purchase Orders': { banner: 'poQueueBanner', text: 'poQueueText', noun: 'request' }
+    'Purchase Orders': { banner: 'poQueueBanner', text: 'poQueueText', noun: 'request' },
+     'Fuel Consumption': { banner: 'fuelQueueBanner', text: 'fuelQueueText', noun: 'record' }
   };
 
   function updateQueueBanners() {
@@ -3201,6 +3373,7 @@ function onSubmitTasks(ev) {
     initTasksForm();
     initAttendanceForm();
     initPurchaseForm();
+     initFuelForm();
     loadEmployeeNames();
     setConnStatus(navigator.onLine);
     updateQueueBanners();
