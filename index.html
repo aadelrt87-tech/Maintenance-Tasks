@@ -4376,6 +4376,65 @@ function scheduleLoggedInIdentityRules() {
     setTimeout(applyLoggedInIdentityRules, delay);
   });
 }
+   /* ============================================================
+   FUEL CONSUMPTION AUTO CALCULATION
+   First Reading - Second Reading
+   ============================================================ */
+
+function updateFuelConsumption() {
+  const firstInput = document.getElementById('fuel-first-reading');
+  const secondInput = document.getElementById('fuel-second-reading');
+  const consumptionInput = document.getElementById('fuel-consumption');
+
+  if (!firstInput || !secondInput || !consumptionInput) {
+    return;
+  }
+
+  if (firstInput.value === '' || secondInput.value === '') {
+    consumptionInput.value = '0';
+    return;
+  }
+
+  const firstReading = Number(firstInput.value);
+  const secondReading = Number(secondInput.value);
+
+  if (
+    !Number.isFinite(firstReading) ||
+    !Number.isFinite(secondReading)
+  ) {
+    consumptionInput.value = '0';
+    return;
+  }
+
+  const consumption = firstReading - secondReading;
+
+  consumptionInput.value =
+    consumption >= 0
+      ? Number(consumption.toFixed(2))
+      : 0;
+}
+
+function initFuelConsumptionCalculation() {
+  const firstInput = document.getElementById('fuel-first-reading');
+  const secondInput = document.getElementById('fuel-second-reading');
+
+  if (firstInput) {
+    firstInput.addEventListener('input', updateFuelConsumption);
+    firstInput.addEventListener('change', updateFuelConsumption);
+  }
+
+  if (secondInput) {
+    secondInput.addEventListener('input', updateFuelConsumption);
+    secondInput.addEventListener('change', updateFuelConsumption);
+  }
+
+  updateFuelConsumption();
+}
+
+document.addEventListener(
+  'DOMContentLoaded',
+  initFuelConsumptionCalculation
+);
    
 </script>
 </body>
