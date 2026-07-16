@@ -4608,6 +4608,142 @@ document.addEventListener(
   'DOMContentLoaded',
   initFuelConsumptionCalculation
 );
+   /* ============================================================
+   FUEL CONSUMPTION ARABIC / ENGLISH TRANSLATION
+   Exact text matching — icons and submitted values stay unchanged
+   ============================================================ */
+
+function applyFuelLanguage(lang) {
+  const pairs = [
+    ['Fuel Consumption', 'استهلاك الوقود'],
+    ['Fuel reading and consumption record', 'سجل قراءات واستهلاك الوقود'],
+    ['Fuel Readings', 'قراءات الوقود'],
+
+    ['Date and Time of First Reading', 'تاريخ ووقت القراءة الأولى'],
+    ['First Reading', 'القراءة الأولى'],
+    ['First reading date and time is required', 'تاريخ ووقت القراءة الأولى مطلوب'],
+    ['Enter a valid first reading', 'أدخل قراءة أولى صحيحة'],
+
+    ['Date and Time of Second Reading', 'تاريخ ووقت القراءة الثانية'],
+    ['Second Reading', 'القراءة الثانية'],
+    ['Second reading date and time is required', 'تاريخ ووقت القراءة الثانية مطلوب'],
+    ['Second reading must not exceed the first reading', 'يجب ألا تتجاوز القراءة الثانية القراءة الأولى'],
+
+    ['Fuel quantity in litres', 'كمية الوقود باللتر'],
+    ['Consumption', 'الاستهلاك'],
+    ['Auto-calculated — First Reading minus Second Reading', 'يُحسب تلقائياً — القراءة الأولى ناقص القراءة الثانية'],
+
+    ['Note', 'ملاحظة'],
+    ['Add an optional note…', 'أضف ملاحظة اختيارية…'],
+    ['Add an optional note...', 'أضف ملاحظة اختيارية…'],
+
+    ['Approve Fuel Consumption', 'اعتماد استهلاك الوقود'],
+    ['1 fuel record saved offline — will submit when back online.', 'تم حفظ سجل وقود دون اتصال — سيُرسل عند عودة الإنترنت.'],
+
+    ['e.g. 5000', 'مثال: 5000'],
+    ['e.g. 4700', 'مثال: 4700'],
+    ['Fuel', 'الوقود'],
+    ['L', 'لتر']
+  ];
+
+  const dictionary = {};
+
+  pairs.forEach(function (pair) {
+    if (lang === 'ar') {
+      dictionary[pair[0]] = pair[1];
+    } else {
+      dictionary[pair[1]] = pair[0];
+    }
+  });
+
+  const roots = [
+    document.getElementById('page-fuel'),
+    document.getElementById('nav-fuel')
+  ];
+
+  roots.forEach(function (root) {
+    if (!root) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    const textNodes = [];
+    let node;
+
+    while (node = walker.nextNode()) {
+      if (node.nodeValue && node.nodeValue.trim()) {
+        textNodes.push(node);
+      }
+    }
+
+    textNodes.forEach(function (textNode) {
+      const rawText = textNode.nodeValue;
+      const trimmedText = rawText.trim();
+
+      if (!Object.prototype.hasOwnProperty.call(dictionary, trimmedText)) {
+        return;
+      }
+
+      textNode.nodeValue = rawText.replace(
+        trimmedText,
+        dictionary[trimmedText]
+      );
+    });
+  });
+
+  document
+    .querySelectorAll('#page-fuel input[placeholder], #page-fuel textarea[placeholder]')
+    .forEach(function (element) {
+      const placeholder = element.getAttribute('placeholder');
+
+      if (
+        placeholder &&
+        Object.prototype.hasOwnProperty.call(dictionary, placeholder)
+      ) {
+        element.setAttribute(
+          'placeholder',
+          dictionary[placeholder]
+        );
+      }
+    });
+}
+
+function initFuelLanguage() {
+  const btnEn = document.getElementById('btnLangEn');
+  const btnAr = document.getElementById('btnLangAr');
+
+  function refreshFuelLanguage() {
+    const lang =
+      localStorage.getItem('genops_language') || 'en';
+
+    applyFuelLanguage(lang);
+  }
+
+  if (btnEn) {
+    btnEn.addEventListener('click', function () {
+      setTimeout(refreshFuelLanguage, 180);
+      setTimeout(refreshFuelLanguage, 800);
+    });
+  }
+
+  if (btnAr) {
+    btnAr.addEventListener('click', function () {
+      setTimeout(refreshFuelLanguage, 180);
+      setTimeout(refreshFuelLanguage, 800);
+    });
+  }
+
+  refreshFuelLanguage();
+  setTimeout(refreshFuelLanguage, 800);
+}
+
+document.addEventListener(
+  'DOMContentLoaded',
+  initFuelLanguage
+);
    
 </script>
 </body>
