@@ -1445,6 +1445,33 @@ html[dir="rtl"] .auth-user-bar {
     border-radius: 23px;
   }
 }
+   /* ============================================================
+   FUEL CONSUMPTION TAB
+   ============================================================ */
+
+#page-fuel .accent-strip {
+  background: #CA8A04;
+}
+
+#page-fuel .page-header {
+  border-left: 4px solid #CA8A04;
+}
+
+#page-fuel .page-header::after {
+  background: rgba(202, 138, 4, 0.12);
+}
+
+#page-fuel .btn-submit {
+  background: linear-gradient(135deg, #CA8A04 0%, #854D0E 100%);
+}
+
+#nav-fuel.active .nav-indicator {
+  background: #CA8A04;
+}
+
+#nav-fuel.active {
+  background: rgba(202, 138, 4, 0.16);
+}
    
 </style>
 </head>
@@ -2004,6 +2031,200 @@ html[dir="rtl"] .auth-user-bar {
     </div>
   </form>
 </div>
+   <!-- ================= PAGE: FUEL CONSUMPTION ================= -->
+<div class="page" id="page-fuel">
+  <div class="page-header">
+    <div class="accent-strip"></div>
+    <div>
+      <h1>Fuel Consumption</h1>
+      <div class="sub">Fuel reading and consumption record</div>
+    </div>
+  </div>
+
+  <div class="queue-banner" id="fuelQueueBanner">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2">
+      <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+
+    <span class="qb-text" id="fuelQueueText">
+      1 fuel record saved offline — will submit when back online.
+    </span>
+  </div>
+
+  <form id="formFuel" novalidate>
+
+    <div class="card">
+      <div class="card-title">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2">
+          <path d="M4 22V4a2 2 0 012-2h8a2 2 0 012 2v18"/>
+          <path d="M4 12h12"/>
+          <path d="M16 7h2l2 3v8a2 2 0 01-2 2h-2"/>
+          <path d="M8 6h4"/>
+        </svg>
+        Fuel Readings
+      </div>
+
+      <div class="field">
+        <label for="fuel-first-dt">
+          Date and Time of First Reading
+          <span class="req">*</span>
+        </label>
+
+        <div class="dt-row">
+          <input
+            class="input"
+            type="datetime-local"
+            id="fuel-first-dt"
+            required>
+
+          <button
+            type="button"
+            class="btn-now"
+            data-target="fuel-first-dt">
+            NOW
+          </button>
+        </div>
+
+        <div class="error-msg" id="err-fuel-first-dt">
+          First reading date and time is required
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fuel-first-reading">
+          First Reading
+          <span class="req">*</span>
+          <span class="hint">Fuel quantity in litres</span>
+        </label>
+
+        <input
+          class="input"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          id="fuel-first-reading"
+          placeholder="e.g. 5000"
+          required>
+
+        <div class="error-msg" id="err-fuel-first-reading">
+          Enter a valid first reading
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fuel-second-dt">
+          Date and Time of Second Reading
+          <span class="req">*</span>
+        </label>
+
+        <div class="dt-row">
+          <input
+            class="input"
+            type="datetime-local"
+            id="fuel-second-dt"
+            required>
+
+          <button
+            type="button"
+            class="btn-now"
+            data-target="fuel-second-dt">
+            NOW
+          </button>
+        </div>
+
+        <div class="error-msg" id="err-fuel-second-dt">
+          Second reading date and time is required
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fuel-second-reading">
+          Second Reading
+          <span class="req">*</span>
+          <span class="hint">Fuel quantity in litres</span>
+        </label>
+
+        <input
+          class="input"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          id="fuel-second-reading"
+          placeholder="e.g. 4700"
+          required>
+
+        <div class="error-msg" id="err-fuel-second-reading">
+          Second reading must not exceed the first reading
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fuel-consumption">
+          Consumption
+          <span class="hint">
+            Auto-calculated — First Reading minus Second Reading
+          </span>
+        </label>
+
+        <div class="iqd-input-wrap">
+          <input
+            class="input"
+            type="number"
+            id="fuel-consumption"
+            value="0"
+            readonly>
+
+          <span class="iqd-suffix">L</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fuel-note">Note</label>
+
+        <textarea
+          class="input"
+          id="fuel-note"
+          rows="4"
+          maxlength="1000"
+          placeholder="Add an optional note…"></textarea>
+      </div>
+    </div>
+
+    <div class="submit-bar">
+      <button
+        type="submit"
+        class="btn-submit"
+        id="btnSubmitFuel">
+
+        <svg
+          class="btn-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+
+        <span class="btn-label">
+          Approve Fuel Consumption
+        </span>
+
+        <span class="spinner"></span>
+      </button>
+    </div>
+
+  </form>
+</div>
 
 <!-- ================= BOTTOM NAVIGATION ================= -->
 <nav class="bottom-nav">
@@ -2026,6 +2247,21 @@ html[dir="rtl"] .auth-user-bar {
     <div class="nav-indicator"></div>
     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/></svg>
     <span class="nav-label">Purchase</span>
+  </button>
+     <button class="nav-btn" id="nav-fuel" data-page="fuel">
+    <div class="nav-indicator"></div>
+
+    <svg
+      class="nav-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2">
+      <path d="M12 2C9 7 5 11 5 15a7 7 0 0014 0c0-4-4-8-7-13z"/>
+      <path d="M9 16a3 3 0 006 0"/>
+    </svg>
+
+    <span class="nav-label">Fuel</span>
   </button>
 </nav>
 
