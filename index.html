@@ -1665,7 +1665,8 @@ html[dir="rtl"] .auth-user-bar {
 
       <div class="field">
         <label for="gen-start-hm">Start Hour Meter<span class="req">*</span><span class="hint">Reading at run start, in hours</span></label>
-        <input class="input" type="number" inputmode="decimal" step="0.1" min="0" id="gen-start-hm" placeholder="e.g. 1245.6" required>
+        <input class="input" type="number" inputmode="decimal" step="0.1" min="0" id="gen-start-hm" placeholder="—" readonly aria-readonly="true" autocomplete="off" required>
+        <div id="gen-opening-status" role="status" style="font-size:11px;color:var(--steel-light);margin-top:6px;line-height:1.4"></div>
         <div class="error-msg" id="err-gen-start-hm">Enter a valid start hour meter reading</div>
       </div>
 
@@ -2112,8 +2113,10 @@ html[dir="rtl"] .auth-user-bar {
           min="0"
           step="0.01"
           id="fuel-first-reading"
-          placeholder="e.g. 5000"
+          readonly aria-readonly="true" autocomplete="off"
+          placeholder="—"
           required>
+        <div id="fuel-opening-status" role="status" style="font-size:11px;color:var(--steel-light);margin-top:6px;line-height:1.4"></div>
 
         <div class="error-msg" id="err-fuel-first-reading">
           Enter a valid first reading
@@ -2467,7 +2470,7 @@ function loadEmployeeNames() {
       btn.addEventListener('click', () => {
         const target = $(btn.dataset.target);
         if (target) {
-          target.value = nowForInput();
+          target.value = ['gen-start-dt', 'gen-end-dt', 'fuel-first-dt', 'fuel-second-dt'].includes(btn.dataset.target) ? openingNow() : nowForInput();
           target.dispatchEvent(new Event('input', { bubbles: true }));
           target.dispatchEvent(new Event('change', { bubbles: true }));
         }
@@ -2478,6 +2481,202 @@ function loadEmployeeNames() {
   /* ============================================================
      6. GENERATORS FORM
      ============================================================ */
+  /* Automatic opening readings: fetched from Sheets and never typed. */
+  const openingFields = {
+    'Generators': { input: 'gen-start-hm', date: 'gen-start-dt', entity: 'gen-name', status: 'gen-opening-status' },
+    'Fuel Consumption': { input: 'fuel-first-reading', date: 'fuel-first-dt', entity: '', status: 'fuel-opening-status' }
+  };
+  const openingStates = {};
+  const openingAttempts = {};
+
+  function openingText(en, ar) {
+    return localStorage.getItem('genops_language') === 'ar' ? ar : en;
+  }
+
+  function openingNow() {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Baghdad', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(new Date());
+    const values = {};
+    parts.forEach(function (part) { values[part.type] = part.value; });
+    return values.year + '-' + values.month + '-' + values.day + 'T' + values.hour + ':' + values.minute;
+  }
+
+  function openingSelection(sheet) {
+    const fields = openingFields[sheet];
+    return { sheet: sheet, targetDate: $(fields.date).value.slice(0, 10),
+      generatorName: fields.entity ? $(fields.entity).value : '' };
+  }
+
+  function openingSelectionKey(sheet) {
+    return JSON.stringify(openingSelection(sheet)) + '|' +
+      (localStorage.getItem(CONFIG.LS_PREFIX + 'auth_token') || '');
+  }
+
+  function renderOpeningStatus(sheet) {
+    const state = openingStates[sheet];
+    if (state) $(openingFields[sheet].status).textContent = openingText(state.en || '', state.ar || '');
+  }
+
+  function setOpeningStatus(sheet, en, ar) {
+    const state = openingStates[sheet];
+    state.en = en; state.ar = ar;
+    renderOpeningStatus(sheet);
+  }
+
+  function notifyOpeningInput(sheet) {
+    $(openingFields[sheet].input).dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function openingFailureText(error) {
+    const messages = {
+      OPENING_PREVIOUS_DAY_MISSING: ['No closing reading for the previous day. Complete that day in the sheet first.', 'ماكو قراءة نهاية لليوم السابق. يجب استكمال سجل ذلك اليوم بالشيت أولاً.'],
+      OPENING_SOURCE_INVALID: ['The previous closing reading is invalid. Review the sheet.', 'قراءة النهاية السابقة غير صحيحة. راجع الشيت.'],
+      OPENING_SOURCE_CONFLICT: ['Conflicting previous readings have the same time. Review the sheet.', 'توجد قراءات سابقة مختلفة بنفس الوقت. راجع الشيت.'],
+      OPENING_COLUMNS_INVALID: ['The required sheet columns could not be found. Review the sheet headers.', 'تعذّر العثور على أعمدة القراءات المطلوبة. راجع عناوين الشيت.'],
+      OPENING_REFRESH_REQUIRED: ['The opening reading changed. It is being reloaded; check the closing reading before retrying.', 'قراءة البداية تغيّرت. يجري تحديثها؛ راجع قراءة النهاية قبل إعادة الحفظ.'],
+      OPENING_TIME_INVALID: ['The closing time must not be before the starting time.', 'وقت القراءة الثانية يجب ألا يسبق وقت القراءة الأولى.'],
+      OPENING_END_INVALID: ['Check the closing reading against the opening reading.', 'راجع قراءة النهاية مقارنةً بقراءة البداية.'],
+      OPENING_BUSY: ['Another reading is being saved. Please retry shortly.', 'يجري حفظ قراءة أخرى. أعد المحاولة بعد قليل.']
+    };
+    return messages[error.code] || [
+      'Could not confirm the reading with the sheet. Keep this page open and retry when connected.',
+      'تعذّر تأكيد القراءة مع الشيت. خلّي الصفحة مفتوحة وأعد المحاولة بعد عودة الاتصال.'
+    ];
+  }
+
+  function isOpeningAuthError(error) {
+    return /^(LOGIN_REQUIRED|SESSION_NOT_FOUND|SESSION_EXPIRED|SESSION_INACTIVE)$/.test(error.code || error.message || '');
+  }
+
+  async function refreshOpeningReading(sheet) {
+    const oldState = openingStates[sheet];
+    if (oldState && oldState.controller) oldState.controller.abort();
+    const state = { ready: false, key: openingSelectionKey(sheet), controller: null };
+    openingStates[sheet] = state;
+    const fields = openingFields[sheet];
+    const input = $(fields.input);
+    input.readOnly = true;
+    input.value = '';
+    notifyOpeningInput(sheet);
+    const selection = openingSelection(sheet);
+    if (!selection.targetDate || (fields.entity && !selection.generatorName)) {
+      setOpeningStatus(sheet, 'Select the generator and record date to load the opening reading.', 'اختر المولدة وتاريخ السجل لجلب قراءة البداية.');
+      if (!fields.entity) setOpeningStatus(sheet, 'Select the record date to load the opening reading.', 'اختر تاريخ السجل لجلب قراءة البداية.');
+      return;
+    }
+    if (!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes('YOUR_DEPLOYMENT_ID')) {
+      setOpeningStatus(sheet, 'Configure the Apps Script web app URL first.', 'يجب ضبط رابط Apps Script أولاً.');
+      return;
+    }
+    const token = localStorage.getItem(CONFIG.LS_PREFIX + 'auth_token');
+    if (!token) {
+      setOpeningStatus(sheet, 'Sign in to load the opening reading.', 'سجّل الدخول لجلب قراءة البداية.');
+      return;
+    }
+    if (!navigator.onLine) {
+      setOpeningStatus(sheet, 'Connect to the internet to load the opening reading from the sheet.', 'اتصل بالإنترنت لجلب قراءة البداية من الشيت.');
+      return;
+    }
+    setOpeningStatus(sheet, 'Loading the previous day’s closing reading…', 'جاري جلب قراءة نهاية اليوم السابق…');
+    const controller = new AbortController();
+    state.controller = controller;
+    const timeout = setTimeout(function () { controller.abort(); }, 30000);
+    try {
+      const response = await fetch(CONFIG.WEB_APP_URL, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({ action: 'getOpeningReading', token: token }, selection)),
+        redirect: 'follow', signal: controller.signal
+      });
+      const result = await response.json();
+      if (openingStates[sheet] !== state || state.key !== openingSelectionKey(sheet)) return;
+      if (!result || !result.success) {
+        const error = new Error((result && result.error) || 'Opening reading request failed');
+        error.code = result && (result.errorCode || result.error);
+        throw error;
+      }
+      const source = result.opening;
+      if (!source || source.sheet !== sheet || source.targetDate !== selection.targetDate ||
+          source.generatorName !== selection.generatorName || typeof source.value !== 'number' ||
+          !Number.isFinite(source.value) || source.value < 0 || !source.sourceKey) {
+        throw new Error('Invalid opening reading response');
+      }
+      state.ready = true; state.source = source;
+      input.value = source.value;
+      notifyOpeningInput(sheet);
+      setOpeningStatus(sheet,
+        'From the sheet · closing reading ' + source.sourceDateTime.slice(0, 16).replace('T', ' ') + ' (Baghdad). Locked.',
+        'من الشيت · قراءة النهاية ' + source.sourceDateTime.slice(0, 16).replace('T', ' ') + ' بتوقيت بغداد. غير قابلة للتعديل.');
+    } catch (error) {
+      if (openingStates[sheet] !== state || state.key !== openingSelectionKey(sheet)) return;
+      if (isOpeningAuthError(error)) {
+        clearAuthSession(); showAuthLoginScreen();
+      } else {
+        const message = openingFailureText(error);
+        setOpeningStatus(sheet, message[0], message[1]);
+      }
+    } finally {
+      clearTimeout(timeout);
+      state.controller = null;
+    }
+  }
+
+  function requireOpeningReading(sheet) {
+    const state = openingStates[sheet];
+    if (state && state.ready && state.key === openingSelectionKey(sheet) &&
+        $(openingFields[sheet].input).value !== '' &&
+        Number($(openingFields[sheet].input).value) === state.source.value) return true;
+    refreshOpeningReading(sheet);
+    toast('info', openingText('Opening reading required', 'قراءة البداية مطلوبة'),
+      openingText('Wait for the reading from the sheet, then submit again.', 'انتظر جلب القراءة من الشيت، ثم أعد الحفظ.'));
+    return false;
+  }
+
+  function prepareOpeningAttempt(record) {
+    const state = openingStates[record.sheet];
+    record.openingSource = state.source.sourceKey;
+    const values = Object.assign({}, record.data);
+    delete values['Submission Timestamp'];
+    const signature = JSON.stringify([values, record.openingSource, state.key]);
+    const previous = openingAttempts[record.sheet];
+    // Preserve the id after a timeout: the server may already have saved it.
+    if (previous && previous.signature === signature) record.clientId = previous.clientId;
+    else openingAttempts[record.sheet] = { signature: signature, clientId: record.clientId };
+  }
+
+  function initOpeningReadings() {
+    Object.keys(openingFields).forEach(function (sheet) {
+      const fields = openingFields[sheet];
+      $(fields.input).readOnly = true;
+      $(fields.date).value = openingNow();
+      $(fields.date).addEventListener('input', function () {
+        const state = openingStates[sheet];
+        if (state && state.key !== openingSelectionKey(sheet)) {
+          state.ready = false;
+          $(fields.input).value = '';
+          notifyOpeningInput(sheet);
+          setOpeningStatus(sheet, 'Record date changed. Waiting for the sheet reading.', 'تغيّر تاريخ السجل. بانتظار قراءة الشيت.');
+        }
+      });
+      $(fields.date).addEventListener('change', function () { refreshOpeningReading(sheet); });
+      if (fields.entity) $(fields.entity).addEventListener('change', function () { refreshOpeningReading(sheet); });
+      refreshOpeningReading(sheet);
+    });
+    const refreshAll = function () { Object.keys(openingFields).forEach(refreshOpeningReading); };
+    window.addEventListener('online', refreshAll);
+    window.addEventListener('genops-auth-changed', refreshAll);
+    window.addEventListener('storage', function (event) {
+      if (event.key === CONFIG.LS_PREFIX + 'auth_token' || event.key === null) refreshAll();
+    });
+    ['btnLangEn', 'btnLangAr'].forEach(function (id) {
+      $(id).addEventListener('click', function () {
+        setTimeout(function () { Object.keys(openingFields).forEach(renderOpeningStatus); }, 0);
+      });
+    });
+  }
+
+
   const genState = { images: [] }; // no images on this form, kept for symmetry
 
   function initGeneratorsForm() {
@@ -2565,6 +2764,7 @@ function loadEmployeeNames() {
 
   function onSubmitGenerators(ev) {
     ev.preventDefault();
+    if (!requireOpeningReading('Generators')) return;
     if (!validateGenerators()) { vibrateError(); toast('error', 'Check the form', 'Some required fields need attention.'); return; }
 
     const startHm = parseFloat($('gen-start-hm').value);
@@ -2590,6 +2790,7 @@ function loadEmployeeNames() {
       }
     };
 
+    prepareOpeningAttempt(record);
     submitRecord(record, $('btnSubmitGen'), resetGeneratorsForm, 'gen');
   }
 
@@ -2604,7 +2805,9 @@ function loadEmployeeNames() {
     qsa('#formGenerators .invalid').forEach((el) => el.classList.remove('invalid'));
     qsa('#formGenerators .error-msg.show').forEach((el) => el.classList.remove('show'));
     // Re-prefill so the next log entry doesn't start with a blank required field.
-    $('gen-start-dt').value = nowForInput();
+    $('gen-start-dt').value = openingNow();
+    delete openingAttempts.Generators;
+    refreshOpeningReading('Generators');
   }
 
   /* ============================================================
@@ -2972,6 +3175,7 @@ function validateFuel() {
 
 function onSubmitFuel(event) {
   event.preventDefault();
+  if (!requireOpeningReading('Fuel Consumption')) return;
 
   if (!validateFuel()) {
     vibrateError();
@@ -3017,6 +3221,7 @@ function onSubmitFuel(event) {
     }
   };
 
+  prepareOpeningAttempt(record);
   submitRecord(
     record,
     $('btnSubmitFuel'),
@@ -3038,7 +3243,9 @@ function resetFuelForm() {
     element.classList.remove('show');
   });
 
-  $('fuel-first-dt').value = nowForInput();
+  $('fuel-first-dt').value = openingNow();
+  delete openingAttempts['Fuel Consumption'];
+  refreshOpeningReading('Fuel Consumption');
 }
 
   /* ============================================================
@@ -3284,9 +3491,24 @@ function resetFuelForm() {
         onSuccessReset();
         toast('success', 'Submitted', record.sheet === 'Purchase Orders' ? 'Purchase request sent for approval.' : 'Record saved to Google Sheets.');
       })
-      .catch(() => {
+      .catch((error) => {
         setButtonLoading(btn, false);
         isSubmitting = false;
+        if (openingFields[record.sheet]) {
+          // These two forms retain their inputs until the sheet confirms the
+          // save. Retry uses the same client id if the content is unchanged.
+          sessionStorage.removeItem(dupKey);
+          if (isOpeningAuthError(error)) {
+            clearAuthSession(); showAuthLoginScreen();
+            toast('error', openingText('Sign in again', 'سجّل الدخول مجدداً'),
+              openingText('Your inputs are still in the form.', 'بياناتك باقية بالاستمارة.'));
+          } else {
+            if (error.code === 'OPENING_REFRESH_REQUIRED') refreshOpeningReading(record.sheet);
+            const message = openingFailureText(error);
+            toast('error', openingText('Save not confirmed', 'لم يتأكد الحفظ'), openingText(message[0], message[1]), 6000);
+          }
+          return;
+        }
         pushToQueue(record);
         onSuccessReset();
         toast('info', 'Saved offline', 'No connection — this will sync automatically once you\u2019re back online.');
@@ -3354,7 +3576,11 @@ function resetFuelForm() {
         .then((json) => {
           clearTimeout(timeoutId);
           if (json && json.success) resolve(json);
-          else reject(new Error((json && json.error) || 'Server rejected submission'));
+          else {
+            const error = new Error((json && json.error) || 'Server rejected submission');
+            error.code = json && (json.errorCode || json.error);
+            reject(error);
+          }
         })
         .catch((err) => {
           clearTimeout(timeoutId);
@@ -3384,6 +3610,8 @@ function resetFuelForm() {
       const el = $(id);
       if (el && !el.value) el.value = nowForInput();
     });
+
+    initOpeningReadings();
 
     // Attempt to flush any queued offline records from a previous session.
     if (navigator.onLine) flushQueue();
@@ -4246,12 +4474,14 @@ function saveAuthSession(result) {
   localStorage.setItem(AUTH_KEYS.employeeName, result.employeeName || '');
   localStorage.setItem(AUTH_KEYS.role, result.role || 'User');
   localStorage.setItem(AUTH_KEYS.expiresAt, result.expiresAt || '');
+  window.dispatchEvent(new Event('genops-auth-changed'));
 }
 
 function clearAuthSession() {
   Object.keys(AUTH_KEYS).forEach(function (key) {
     localStorage.removeItem(AUTH_KEYS[key]);
   });
+  window.dispatchEvent(new Event('genops-auth-changed'));
 }
 
 function authSessionExists() {
@@ -4316,6 +4546,10 @@ function hideAuthLoginScreen() {
 
 async function submitAuthLogin() {
   clearAuthError();
+  if (!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes('YOUR_DEPLOYMENT_ID')) {
+    showAuthError(authMessage('Configure the Apps Script web app URL first.', 'يجب ضبط رابط Apps Script أولاً.'));
+    return;
+  }
 
   const usernameInput = document.getElementById('authUsername');
   const passcodeInput = document.getElementById('authPasscode');
