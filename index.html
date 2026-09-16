@@ -1657,8 +1657,8 @@ html[dir="rtl"] .auth-user-bar {
       <div class="field">
         <label for="gen-start-dt">Start Date &amp; Time<span class="req">*</span></label>
         <div class="dt-row">
-          <input class="input" type="datetime-local" id="gen-start-dt" required>
-          <button type="button" class="btn-now" data-target="gen-start-dt">NOW</button>
+          <input class="input" type="datetime-local" id="gen-start-dt" required readonly aria-readonly="true" step="any">
+          <button type="button" class="btn-now" data-target="gen-start-dt" disabled aria-disabled="true">NOW</button>
         </div>
         <div class="error-msg" id="err-gen-start-dt">Start date &amp; time is required</div>
       </div>
@@ -2084,12 +2084,12 @@ html[dir="rtl"] .auth-user-bar {
             class="input"
             type="datetime-local"
             id="fuel-first-dt"
-            required>
+            required readonly aria-readonly="true" step="any">
 
           <button
             type="button"
             class="btn-now"
-            data-target="fuel-first-dt">
+            data-target="fuel-first-dt" disabled aria-disabled="true">
             NOW
           </button>
         </div>
@@ -2470,7 +2470,8 @@ function loadEmployeeNames() {
       btn.addEventListener('click', () => {
         const target = $(btn.dataset.target);
         if (target) {
-          target.value = ['gen-start-dt', 'gen-end-dt', 'fuel-first-dt', 'fuel-second-dt'].includes(btn.dataset.target) ? openingNow() : nowForInput();
+          if (target.readOnly) return;
+          target.value = ['gen-end-dt', 'fuel-second-dt'].includes(btn.dataset.target) ? openingNow() : nowForInput();
           target.dispatchEvent(new Event('input', { bubbles: true }));
           target.dispatchEvent(new Event('change', { bubbles: true }));
         }
@@ -2488,6 +2489,7 @@ function loadEmployeeNames() {
   };
   const openingStates = {};
   const openingAttempts = {};
+  const openingSchemaVersion = 'carry-forward-v2';
 
   function openingText(en, ar) {
     return localStorage.getItem('genops_language') === 'ar' ? ar : en;
@@ -2505,8 +2507,14 @@ function loadEmployeeNames() {
 
   function openingSelection(sheet) {
     const fields = openingFields[sheet];
-    return { sheet: sheet, targetDate: $(fields.date).value.slice(0, 10),
+    return { sheet: sheet,
       generatorName: fields.entity ? $(fields.entity).value : '' };
+  }
+
+  function openingLocalDateTime(value) {
+    const parts = String(value || '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/);
+    if (!parts || Number(parts[2]) > 23 || Number(parts[3]) > 59 || Number(parts[4] || 0) > 59) return '';
+    return parts[1] + 'T' + parts[2] + ':' + parts[3] + ':' + (parts[4] || '00') + '.' + (parts[5] || '').padEnd(3, '0');
   }
 
   function openingSelectionKey(sheet) {
@@ -2531,11 +2539,12 @@ function loadEmployeeNames() {
 
   function openingFailureText(error) {
     const messages = {
-      OPENING_PREVIOUS_DAY_MISSING: ['No closing reading for the previous day. Complete that day in the sheet first.', 'ماكو قراءة نهاية لليوم السابق. يجب استكمال سجل ذلك اليوم بالشيت أولاً.'],
+      OPENING_SOURCE_MISSING: ['No saved closing reading. Add the actual initial closing record in the sheet first.', 'ماكو قراءة نهاية محفوظة. أضف سجل النهاية الفعلي الأول بالشيت حتى تنجلب البداية تلقائياً.'],
+      OPENING_VERSION_MISMATCH: ['Update the Apps Script deployment to the matching version, then reload this page.', 'حدّث نشر Apps Script بالنسخة المطابقة، ثم أعد تحميل الصفحة.'],
       OPENING_SOURCE_INVALID: ['The previous closing reading is invalid. Review the sheet.', 'قراءة النهاية السابقة غير صحيحة. راجع الشيت.'],
       OPENING_SOURCE_CONFLICT: ['Conflicting previous readings have the same time. Review the sheet.', 'توجد قراءات سابقة مختلفة بنفس الوقت. راجع الشيت.'],
       OPENING_COLUMNS_INVALID: ['The required sheet columns could not be found. Review the sheet headers.', 'تعذّر العثور على أعمدة القراءات المطلوبة. راجع عناوين الشيت.'],
-      OPENING_REFRESH_REQUIRED: ['The opening reading changed. It is being reloaded; check the closing reading before retrying.', 'قراءة البداية تغيّرت. يجري تحديثها؛ راجع قراءة النهاية قبل إعادة الحفظ.'],
+      OPENING_REFRESH_REQUIRED: ['The latest closing record changed. The start is being reloaded; check your ending reading and time before retrying.', 'تغيّر آخر سجل نهاية. يجري تحديث البداية؛ راجع قراءة النهاية ووقتها قبل إعادة الحفظ.'],
       OPENING_TIME_INVALID: ['The closing time must not be before the starting time.', 'وقت القراءة الثانية يجب ألا يسبق وقت القراءة الأولى.'],
       OPENING_END_INVALID: ['Check the closing reading against the opening reading.', 'راجع قراءة النهاية مقارنةً بقراءة البداية.'],
       OPENING_BUSY: ['Another reading is being saved. Please retry shortly.', 'يجري حفظ قراءة أخرى. أعد المحاولة بعد قليل.']
@@ -2552,6 +2561,16 @@ function loadEmployeeNames() {
 
   async function refreshOpeningReading(sheet) {
     const oldState = openingStates[sheet];
+    const attempt = openingAttempts[sheet];
+    // A timed-out save may already exist in Sheets. Keep its original start
+    // until a retry with the same client id confirms the outcome.
+    if (oldState && oldState.ready && attempt && attempt.awaitingConfirmation &&
+        attempt.key === openingSelectionKey(sheet) && oldState.key === attempt.key) {
+      $(openingFields[sheet].input).value = oldState.source.value;
+      $(openingFields[sheet].date).value = oldState.source.sourceDateTime;
+      notifyOpeningInput(sheet);
+      return;
+    }
     if (oldState && oldState.controller) oldState.controller.abort();
     const state = { ready: false, key: openingSelectionKey(sheet), controller: null };
     openingStates[sheet] = state;
@@ -2559,11 +2578,12 @@ function loadEmployeeNames() {
     const input = $(fields.input);
     input.readOnly = true;
     input.value = '';
+    $(fields.date).readOnly = true;
+    $(fields.date).value = '';
     notifyOpeningInput(sheet);
     const selection = openingSelection(sheet);
-    if (!selection.targetDate || (fields.entity && !selection.generatorName)) {
-      setOpeningStatus(sheet, 'Select the generator and record date to load the opening reading.', 'اختر المولدة وتاريخ السجل لجلب قراءة البداية.');
-      if (!fields.entity) setOpeningStatus(sheet, 'Select the record date to load the opening reading.', 'اختر تاريخ السجل لجلب قراءة البداية.');
+    if (fields.entity && !selection.generatorName) {
+      setOpeningStatus(sheet, 'Select the generator to load its last closing reading and time.', 'اختر المولدة لجلب آخر قراءة نهاية ووقتها.');
       return;
     }
     if (!CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL.includes('YOUR_DEPLOYMENT_ID')) {
@@ -2579,7 +2599,7 @@ function loadEmployeeNames() {
       setOpeningStatus(sheet, 'Connect to the internet to load the opening reading from the sheet.', 'اتصل بالإنترنت لجلب قراءة البداية من الشيت.');
       return;
     }
-    setOpeningStatus(sheet, 'Loading the previous day’s closing reading…', 'جاري جلب قراءة نهاية اليوم السابق…');
+    setOpeningStatus(sheet, 'Loading the latest closing reading and time…', 'جاري جلب آخر قراءة نهاية ووقتها…');
     const controller = new AbortController();
     state.controller = controller;
     const timeout = setTimeout(function () { controller.abort(); }, 30000);
@@ -2597,17 +2617,23 @@ function loadEmployeeNames() {
         throw error;
       }
       const source = result.opening;
-      if (!source || source.sheet !== sheet || source.targetDate !== selection.targetDate ||
+      if (!source || source.schemaVersion !== openingSchemaVersion) {
+        const error = new Error('Opening reading version mismatch');
+        error.code = 'OPENING_VERSION_MISMATCH';
+        throw error;
+      }
+      if (source.sheet !== sheet || !openingLocalDateTime(source.sourceDateTime) ||
           source.generatorName !== selection.generatorName || typeof source.value !== 'number' ||
           !Number.isFinite(source.value) || source.value < 0 || !source.sourceKey) {
         throw new Error('Invalid opening reading response');
       }
       state.ready = true; state.source = source;
       input.value = source.value;
+      $(fields.date).value = source.sourceDateTime;
       notifyOpeningInput(sheet);
       setOpeningStatus(sheet,
-        'From the sheet · closing reading ' + source.sourceDateTime.slice(0, 16).replace('T', ' ') + ' (Baghdad). Locked.',
-        'من الشيت · قراءة النهاية ' + source.sourceDateTime.slice(0, 16).replace('T', ' ') + ' بتوقيت بغداد. غير قابلة للتعديل.');
+        'Start = last saved closing · ' + source.sourceDateTime.slice(0, 16).replace('T', ' ') + ' (Baghdad). Reading and time are locked.',
+        'البداية = آخر نهاية محفوظة · ' + source.sourceDateTime.slice(0, 16).replace('T', ' ') + ' بتوقيت بغداد. القراءة والوقت غير قابلين للتعديل.');
     } catch (error) {
       if (openingStates[sheet] !== state || state.key !== openingSelectionKey(sheet)) return;
       if (isOpeningAuthError(error)) {
@@ -2626,7 +2652,8 @@ function loadEmployeeNames() {
     const state = openingStates[sheet];
     if (state && state.ready && state.key === openingSelectionKey(sheet) &&
         $(openingFields[sheet].input).value !== '' &&
-        Number($(openingFields[sheet].input).value) === state.source.value) return true;
+        Number($(openingFields[sheet].input).value) === state.source.value &&
+        openingLocalDateTime($(openingFields[sheet].date).value) === state.source.sourceDateTime) return true;
     refreshOpeningReading(sheet);
     toast('info', openingText('Opening reading required', 'قراءة البداية مطلوبة'),
       openingText('Wait for the reading from the sheet, then submit again.', 'انتظر جلب القراءة من الشيت، ثم أعد الحفظ.'));
@@ -2642,24 +2669,17 @@ function loadEmployeeNames() {
     const previous = openingAttempts[record.sheet];
     // Preserve the id after a timeout: the server may already have saved it.
     if (previous && previous.signature === signature) record.clientId = previous.clientId;
-    else openingAttempts[record.sheet] = { signature: signature, clientId: record.clientId };
+    else openingAttempts[record.sheet] = {
+      signature: signature, clientId: record.clientId, key: state.key, awaitingConfirmation: false
+    };
   }
 
   function initOpeningReadings() {
     Object.keys(openingFields).forEach(function (sheet) {
       const fields = openingFields[sheet];
       $(fields.input).readOnly = true;
-      $(fields.date).value = openingNow();
-      $(fields.date).addEventListener('input', function () {
-        const state = openingStates[sheet];
-        if (state && state.key !== openingSelectionKey(sheet)) {
-          state.ready = false;
-          $(fields.input).value = '';
-          notifyOpeningInput(sheet);
-          setOpeningStatus(sheet, 'Record date changed. Waiting for the sheet reading.', 'تغيّر تاريخ السجل. بانتظار قراءة الشيت.');
-        }
-      });
-      $(fields.date).addEventListener('change', function () { refreshOpeningReading(sheet); });
+      $(fields.date).readOnly = true;
+      $(fields.date).step = 'any';
       if (fields.entity) $(fields.entity).addEventListener('change', function () { refreshOpeningReading(sheet); });
       refreshOpeningReading(sheet);
     });
@@ -2805,7 +2825,6 @@ function loadEmployeeNames() {
     qsa('#formGenerators .invalid').forEach((el) => el.classList.remove('invalid'));
     qsa('#formGenerators .error-msg.show').forEach((el) => el.classList.remove('show'));
     // Re-prefill so the next log entry doesn't start with a blank required field.
-    $('gen-start-dt').value = openingNow();
     delete openingAttempts.Generators;
     refreshOpeningReading('Generators');
   }
@@ -3083,11 +3102,7 @@ function initFuelForm() {
 
   form.addEventListener('submit', onSubmitFuel);
 
-  const firstDate = $('fuel-first-dt');
-
-  if (firstDate && !firstDate.value) {
-    firstDate.value = nowForInput();
-  }
+  // The opening date and reading are loaded together from Sheets.
 }
 
 function validateFuel() {
@@ -3243,7 +3258,6 @@ function resetFuelForm() {
     element.classList.remove('show');
   });
 
-  $('fuel-first-dt').value = openingNow();
   delete openingAttempts['Fuel Consumption'];
   refreshOpeningReading('Fuel Consumption');
 }
@@ -3483,6 +3497,9 @@ function resetFuelForm() {
     isSubmitting = true;
     setButtonLoading(btn, true);
 
+    if (openingFields[record.sheet] && openingAttempts[record.sheet]) {
+      openingAttempts[record.sheet].awaitingConfirmation = true;
+    }
     sendToAppsScript(record)
       .then(() => {
         setButtonLoading(btn, false);
@@ -3498,6 +3515,9 @@ function resetFuelForm() {
           // These two forms retain their inputs until the sheet confirms the
           // save. Retry uses the same client id if the content is unchanged.
           sessionStorage.removeItem(dupKey);
+          if (error.serverRejected && openingAttempts[record.sheet]) {
+            openingAttempts[record.sheet].awaitingConfirmation = false;
+          }
           if (isOpeningAuthError(error)) {
             clearAuthSession(); showAuthLoginScreen();
             toast('error', openingText('Sign in again', 'سجّل الدخول مجدداً'),
@@ -3579,6 +3599,7 @@ function resetFuelForm() {
           else {
             const error = new Error((json && json.error) || 'Server rejected submission');
             error.code = json && (json.errorCode || json.error);
+            error.serverRejected = true;
             reject(error);
           }
         })
@@ -3606,7 +3627,7 @@ function resetFuelForm() {
 
     // Pre-fill "now" for all datetime fields so the field worker
     // rarely has to think about timestamps at all.
-    ['gen-start-dt', 'task-start-dt', 'att-dt'].forEach((id) => {
+    ['task-start-dt', 'att-dt'].forEach((id) => {
       const el = $(id);
       if (el && !el.value) el.value = nowForInput();
     });
